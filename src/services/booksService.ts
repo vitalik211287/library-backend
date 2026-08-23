@@ -1,4 +1,8 @@
-import { getAllBooks } from "../repositories/booksRepository.js";
+import {
+  getAllBooks,
+  getBookByIsbn,
+} from "../repositories/booksRepository.js";
+
 import { getBookFromVivat } from "../providers/vivatProvider.js";
 
 export const getAllBooksService = async () => {
@@ -7,8 +11,20 @@ export const getAllBooksService = async () => {
   return books;
 };
 
-export const lookupBookByIsbnService = async (isbn: string) => {
-  const book = await getBookFromVivat(isbn);
+export const getBookByIsbnService = async (isbn: string) => {
+  const localBook = await getBookByIsbn(isbn);
 
-  return book;
+  if (localBook) {
+    return {
+      ...localBook,
+      source: "local",
+    };
+  }
+
+  const bookFromVivat = await getBookFromVivat(isbn);
+
+  return {
+    ...bookFromVivat,
+    source: "vivat",
+  };
 };

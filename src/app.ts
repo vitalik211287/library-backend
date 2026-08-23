@@ -14,5 +14,6 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/books", booksRouter);
+app.use("/uploads", express.static("uploads"));
 
 export default app;

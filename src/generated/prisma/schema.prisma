@@ -15,6 +15,7 @@ model Book {
   publisher   String?
   year        Int?
   pages       Int?
+  genre       String?
   language    String?
   coverUrl    String?
   description String?

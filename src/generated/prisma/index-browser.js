@@ -128,6 +128,7 @@ exports.Prisma.BookScalarFieldEnum = {
   publisher: 'publisher',
   year: 'year',
   pages: 'pages',
+  genre: 'genre',
   language: 'language',
   coverUrl: 'coverUrl',
   description: 'description',

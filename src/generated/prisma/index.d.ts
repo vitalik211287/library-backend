@@ -924,6 +924,7 @@ export namespace Prisma {
     publisher: string | null
     year: number | null
     pages: number | null
+    genre: string | null
     language: string | null
     coverUrl: string | null
     description: string | null
@@ -939,6 +940,7 @@ export namespace Prisma {
     publisher: string | null
     year: number | null
     pages: number | null
+    genre: string | null
     language: string | null
     coverUrl: string | null
     description: string | null
@@ -954,6 +956,7 @@ export namespace Prisma {
     publisher: number
     year: number
     pages: number
+    genre: number
     language: number
     coverUrl: number
     description: number
@@ -981,6 +984,7 @@ export namespace Prisma {
     publisher?: true
     year?: true
     pages?: true
+    genre?: true
     language?: true
     coverUrl?: true
     description?: true
@@ -996,6 +1000,7 @@ export namespace Prisma {
     publisher?: true
     year?: true
     pages?: true
+    genre?: true
     language?: true
     coverUrl?: true
     description?: true
@@ -1011,6 +1016,7 @@ export namespace Prisma {
     publisher?: true
     year?: true
     pages?: true
+    genre?: true
     language?: true
     coverUrl?: true
     description?: true
@@ -1113,6 +1119,7 @@ export namespace Prisma {
     publisher: string | null
     year: number | null
     pages: number | null
+    genre: string | null
     language: string | null
     coverUrl: string | null
     description: string | null
@@ -1147,6 +1154,7 @@ export namespace Prisma {
     publisher?: boolean
     year?: boolean
     pages?: boolean
+    genre?: boolean
     language?: boolean
     coverUrl?: boolean
     description?: boolean
@@ -1162,6 +1170,7 @@ export namespace Prisma {
     publisher?: boolean
     year?: boolean
     pages?: boolean
+    genre?: boolean
     language?: boolean
     coverUrl?: boolean
     description?: boolean
@@ -1177,6 +1186,7 @@ export namespace Prisma {
     publisher?: boolean
     year?: boolean
     pages?: boolean
+    genre?: boolean
     language?: boolean
     coverUrl?: boolean
     description?: boolean
@@ -1192,6 +1202,7 @@ export namespace Prisma {
     publisher?: boolean
     year?: boolean
     pages?: boolean
+    genre?: boolean
     language?: boolean
     coverUrl?: boolean
     description?: boolean
@@ -1199,7 +1210,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type BookOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "isbn" | "title" | "author" | "publisher" | "year" | "pages" | "language" | "coverUrl" | "description" | "createdAt" | "updatedAt", ExtArgs["result"]["book"]>
+  export type BookOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "isbn" | "title" | "author" | "publisher" | "year" | "pages" | "genre" | "language" | "coverUrl" | "description" | "createdAt" | "updatedAt", ExtArgs["result"]["book"]>
 
   export type $BookPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Book"
@@ -1212,6 +1223,7 @@ export namespace Prisma {
       publisher: string | null
       year: number | null
       pages: number | null
+      genre: string | null
       language: string | null
       coverUrl: string | null
       description: string | null
@@ -1647,6 +1659,7 @@ export namespace Prisma {
     readonly publisher: FieldRef<"Book", 'String'>
     readonly year: FieldRef<"Book", 'Int'>
     readonly pages: FieldRef<"Book", 'Int'>
+    readonly genre: FieldRef<"Book", 'String'>
     readonly language: FieldRef<"Book", 'String'>
     readonly coverUrl: FieldRef<"Book", 'String'>
     readonly description: FieldRef<"Book", 'String'>
@@ -2045,6 +2058,7 @@ export namespace Prisma {
     publisher: 'publisher',
     year: 'year',
     pages: 'pages',
+    genre: 'genre',
     language: 'language',
     coverUrl: 'coverUrl',
     description: 'description',
@@ -2154,6 +2168,7 @@ export namespace Prisma {
     publisher?: StringNullableFilter<"Book"> | string | null
     year?: IntNullableFilter<"Book"> | number | null
     pages?: IntNullableFilter<"Book"> | number | null
+    genre?: StringNullableFilter<"Book"> | string | null
     language?: StringNullableFilter<"Book"> | string | null
     coverUrl?: StringNullableFilter<"Book"> | string | null
     description?: StringNullableFilter<"Book"> | string | null
@@ -2169,6 +2184,7 @@ export namespace Prisma {
     publisher?: SortOrderInput | SortOrder
     year?: SortOrderInput | SortOrder
     pages?: SortOrderInput | SortOrder
+    genre?: SortOrderInput | SortOrder
     language?: SortOrderInput | SortOrder
     coverUrl?: SortOrderInput | SortOrder
     description?: SortOrderInput | SortOrder
@@ -2187,6 +2203,7 @@ export namespace Prisma {
     publisher?: StringNullableFilter<"Book"> | string | null
     year?: IntNullableFilter<"Book"> | number | null
     pages?: IntNullableFilter<"Book"> | number | null
+    genre?: StringNullableFilter<"Book"> | string | null
     language?: StringNullableFilter<"Book"> | string | null
     coverUrl?: StringNullableFilter<"Book"> | string | null
     description?: StringNullableFilter<"Book"> | string | null
@@ -2202,6 +2219,7 @@ export namespace Prisma {
     publisher?: SortOrderInput | SortOrder
     year?: SortOrderInput | SortOrder
     pages?: SortOrderInput | SortOrder
+    genre?: SortOrderInput | SortOrder
     language?: SortOrderInput | SortOrder
     coverUrl?: SortOrderInput | SortOrder
     description?: SortOrderInput | SortOrder
@@ -2225,6 +2243,7 @@ export namespace Prisma {
     publisher?: StringNullableWithAggregatesFilter<"Book"> | string | null
     year?: IntNullableWithAggregatesFilter<"Book"> | number | null
     pages?: IntNullableWithAggregatesFilter<"Book"> | number | null
+    genre?: StringNullableWithAggregatesFilter<"Book"> | string | null
     language?: StringNullableWithAggregatesFilter<"Book"> | string | null
     coverUrl?: StringNullableWithAggregatesFilter<"Book"> | string | null
     description?: StringNullableWithAggregatesFilter<"Book"> | string | null
@@ -2240,6 +2259,7 @@ export namespace Prisma {
     publisher?: string | null
     year?: number | null
     pages?: number | null
+    genre?: string | null
     language?: string | null
     coverUrl?: string | null
     description?: string | null
@@ -2255,6 +2275,7 @@ export namespace Prisma {
     publisher?: string | null
     year?: number | null
     pages?: number | null
+    genre?: string | null
     language?: string | null
     coverUrl?: string | null
     description?: string | null
@@ -2270,6 +2291,7 @@ export namespace Prisma {
     publisher?: NullableStringFieldUpdateOperationsInput | string | null
     year?: NullableIntFieldUpdateOperationsInput | number | null
     pages?: NullableIntFieldUpdateOperationsInput | number | null
+    genre?: NullableStringFieldUpdateOperationsInput | string | null
     language?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
@@ -2285,6 +2307,7 @@ export namespace Prisma {
     publisher?: NullableStringFieldUpdateOperationsInput | string | null
     year?: NullableIntFieldUpdateOperationsInput | number | null
     pages?: NullableIntFieldUpdateOperationsInput | number | null
+    genre?: NullableStringFieldUpdateOperationsInput | string | null
     language?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
@@ -2300,6 +2323,7 @@ export namespace Prisma {
     publisher?: string | null
     year?: number | null
     pages?: number | null
+    genre?: string | null
     language?: string | null
     coverUrl?: string | null
     description?: string | null
@@ -2315,6 +2339,7 @@ export namespace Prisma {
     publisher?: NullableStringFieldUpdateOperationsInput | string | null
     year?: NullableIntFieldUpdateOperationsInput | number | null
     pages?: NullableIntFieldUpdateOperationsInput | number | null
+    genre?: NullableStringFieldUpdateOperationsInput | string | null
     language?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
@@ -2330,6 +2355,7 @@ export namespace Prisma {
     publisher?: NullableStringFieldUpdateOperationsInput | string | null
     year?: NullableIntFieldUpdateOperationsInput | number | null
     pages?: NullableIntFieldUpdateOperationsInput | number | null
+    genre?: NullableStringFieldUpdateOperationsInput | string | null
     language?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
@@ -2402,6 +2428,7 @@ export namespace Prisma {
     publisher?: SortOrder
     year?: SortOrder
     pages?: SortOrder
+    genre?: SortOrder
     language?: SortOrder
     coverUrl?: SortOrder
     description?: SortOrder
@@ -2422,6 +2449,7 @@ export namespace Prisma {
     publisher?: SortOrder
     year?: SortOrder
     pages?: SortOrder
+    genre?: SortOrder
     language?: SortOrder
     coverUrl?: SortOrder
     description?: SortOrder
@@ -2437,6 +2465,7 @@ export namespace Prisma {
     publisher?: SortOrder
     year?: SortOrder
     pages?: SortOrder
+    genre?: SortOrder
     language?: SortOrder
     coverUrl?: SortOrder
     description?: SortOrder
