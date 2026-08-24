@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { getBookByIsbnService } from "../services/booksService.js";
+import { getBookByIsbnService } from "../services/booksServiceIsbn.js";
 
 export const getBookByIsbnController = async (
   req: Request<{ isbn: string }>,
