@@ -1,21 +1,13 @@
 import multer, { type FileFilterCallback } from "multer";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
 import type { Request } from "express";
-import cloudinary from "../config/cloudinary.js";
 
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: async (req, file) => ({
-    folder: "library/covers",
-    allowed_formats: ["jpg", "jpeg", "png", "webp"],
-  }),
-});
+const storage = multer.memoryStorage();
 
-const fileFilter = function (
+const fileFilter = (
   req: Request,
   file: Express.Multer.File,
   cb: FileFilterCallback,
-) {
+) => {
   const allowedTypes = [
     "image/jpeg",
     "image/png",
