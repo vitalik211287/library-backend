@@ -3,11 +3,19 @@ import { getBookByIsbnService } from "../services/booksServiceIsbn.js";
 
 export const getBookByIsbnController = async (
   req: Request<{ isbn: string }>,
-  res: Response
+  res: Response,
 ) => {
-  const { isbn } = req.params;
+  try {
+    const { isbn } = req.params;
 
-  const book = await getBookByIsbnService(isbn);
+    const book = await getBookByIsbnService(isbn);
 
-  res.json(book);
+    return res.json(book);
+  } catch (error) {
+    console.error("Помилка пошуку книги:", error);
+
+    return res.status(404).json({
+      message: "Книгу з таким ISBN не знайдено",
+    });
+  }
 };
