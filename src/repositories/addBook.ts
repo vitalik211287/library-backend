@@ -1,5 +1,5 @@
 import prisma from "../utils/prisma.js";
-import type { Prisma } from "../generated/prisma/client.js";
+import type { Prisma } from "@prisma/client";
 
 export const addBook = async (data: Prisma.BookCreateInput) => {
   return prisma.book.create({

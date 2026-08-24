@@ -1,7 +1,7 @@
 import { addBook } from "../repositories/addBook.js";
 import { saveBookCover } from "./coverService.js";
 
-import type { Prisma } from "../generated/prisma/client.js";
+import type { Prisma } from "@prisma/client";
 
 export const addBookService = async (
   data: Prisma.BookCreateInput
