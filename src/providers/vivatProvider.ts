@@ -177,14 +177,16 @@ export const getBookFromVivat = async (isbn: string) => {
   let coverUrl: string | null = null;
 
   if (vivatCoverUrl) {
+    console.log("VIVAT COVER:", vivatCoverUrl);
+
     try {
       coverUrl = await uploadCoverToCloudinary(vivatCoverUrl, isbn);
-    } catch (error) {
-      console.error("Не вдалося завантажити Vivat cover у Cloudinary:", error);
 
-      // Якщо Cloudinary тимчасово не спрацював,
-      // хоча б повертаємо оригінальну картинку Vivat
-      coverUrl = vivatCoverUrl;
+      console.log("CLOUDINARY COVER:", coverUrl);
+    } catch (error) {
+      console.error("CLOUDINARY VIVAT ERROR:", error);
+
+      throw error;
     }
   }
 
