@@ -3,7 +3,7 @@ import { uploadBookCoverService } from "../services/uploadBookCoverService.js";
 
 export const uploadBookCoverController = async (
   req: Request<{ id: string }>,
-  res: Response
+  res: Response,
 ) => {
   const { id } = req.params;
 
@@ -13,7 +13,7 @@ export const uploadBookCoverController = async (
     });
   }
 
-  const coverUrl = `/uploads/covers/${req.file.filename}`;
+  const coverUrl = req.file.path;
 
   const book = await uploadBookCoverService(id, coverUrl);
 

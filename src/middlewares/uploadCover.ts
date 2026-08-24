@@ -1,30 +1,20 @@
 import multer, { type FileFilterCallback } from "multer";
-import path from "node:path";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import type { Request } from "express";
+import cloudinary from "../config/cloudinary.js";
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/covers/");
-  },
-
-  filename: function (req, file, cb) {
-    const uniqueSuffix =
-      Date.now() + "-" + Math.round(Math.random() * 1e9);
-
-    cb(
-      null,
-      file.fieldname +
-        "-" +
-        uniqueSuffix +
-        path.extname(file.originalname)
-    );
-  },
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => ({
+    folder: "library/covers",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+  }),
 });
 
 const fileFilter = function (
   req: Request,
   file: Express.Multer.File,
-  cb: FileFilterCallback
+  cb: FileFilterCallback,
 ) {
   const allowedTypes = [
     "image/jpeg",
