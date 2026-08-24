@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import { randomUUID } from "node:crypto";
+import cloudinary from "../config/cloudinary.js";
 
 type MultisearchItem = {
   id: string;
@@ -56,12 +57,63 @@ type NextData = {
   };
 };
 
+const uploadCoverToCloudinary = async (
+  imageUrl: string,
+  isbn: string,
+): Promise<string> => {
+  const imageResponse = await fetch(imageUrl);
+
+  if (!imageResponse.ok) {
+    throw new Error(
+      `Vivat cover download failed with status ${imageResponse.status}`,
+    );
+  }
+
+  const arrayBuffer = await imageResponse.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  const result = await new Promise<{ secure_url: string }>(
+    (resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: "library/covers",
+          public_id: `vivat-${isbn}`,
+          overwrite: true,
+          resource_type: "image",
+        },
+        (error, result) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          if (!result) {
+            reject(new Error("Cloudinary upload failed"));
+            return;
+          }
+
+          resolve({
+            secure_url: result.secure_url,
+          });
+        },
+      );
+
+      uploadStream.end(buffer);
+    },
+  );
+
+  return result.secure_url;
+};
+
 export const getBookFromVivat = async (isbn: string) => {
   // 1. Шукаємо книгу за ISBN
   const searchUrl = new URL("https://api.multisearch.io/");
 
   searchUrl.searchParams.set("id", "12340");
-  searchUrl.searchParams.set("key", "c7bff43fa20adee09deca89143415069");
+  searchUrl.searchParams.set(
+    "key",
+    "c7bff43fa20adee09deca89143415069",
+  );
   searchUrl.searchParams.set("lang", "uk");
   searchUrl.searchParams.set("m", Date.now().toString());
   searchUrl.searchParams.set("q", "hyy26i");
@@ -77,16 +129,22 @@ export const getBookFromVivat = async (isbn: string) => {
   });
 
   if (!searchResponse.ok) {
-    throw new Error(`Multisearch failed with status ${searchResponse.status}`);
+    throw new Error(
+      `Multisearch failed with status ${searchResponse.status}`,
+    );
   }
 
-  const searchData = (await searchResponse.json()) as MultisearchResponse;
+  const searchData =
+    (await searchResponse.json()) as MultisearchResponse;
 
   if (searchData.total === 0) {
-    throw new Error(`Book with ISBN ${isbn} not found on Vivat`);
+    throw new Error(
+      `Book with ISBN ${isbn} not found on Vivat`,
+    );
   }
 
-  const searchProduct = searchData.results?.item_groups?.[0]?.items?.[0]?.[0];
+  const searchProduct =
+    searchData.results?.item_groups?.[0]?.items?.[0]?.[0];
 
   if (!searchProduct?.url) {
     throw new Error("Vivat product URL not found");
@@ -96,41 +154,45 @@ export const getBookFromVivat = async (isbn: string) => {
   const productResponse = await fetch(searchProduct.url);
 
   if (!productResponse.ok) {
-    throw new Error(`Vivat page failed with status ${productResponse.status}`);
+    throw new Error(
+      `Vivat page failed with status ${productResponse.status}`,
+    );
   }
 
   const html = await productResponse.text();
 
   const $ = cheerio.load(html);
 
+  // 3. Жанр
   const breadcrumbsJson = $("#BreadCrumbs").text().trim();
 
   let genre: string | null = null;
 
   if (breadcrumbsJson) {
-    const breadcrumbs = JSON.parse(breadcrumbsJson) as BreadcrumbJson;
+    const breadcrumbs =
+      JSON.parse(breadcrumbsJson) as BreadcrumbJson;
 
     const items = breadcrumbs.itemListElement ?? [];
 
-    // Останній breadcrumb — сама книга,
-    // тому беремо попередній
     const genreItem = items.at(-2);
 
-    genre = genreItem?.item?.name ?? genreItem?.name ?? null;
+    genre =
+      genreItem?.item?.name ??
+      genreItem?.name ??
+      null;
   }
 
-  // 3. Product JSON-LD:
-  // назва, опис, обкладинка, видавництво
+  // 4. Product JSON-LD
   const productJson = $("#Product").text().trim();
 
   if (!productJson) {
     throw new Error("Vivat Product JSON-LD not found");
   }
 
-  const productData = JSON.parse(productJson) as VivatProductJson;
+  const productData =
+    JSON.parse(productJson) as VivatProductJson;
 
-  // 4. Next.js JSON:
-  // автор, рік, сторінки, мова тощо
+  // 5. Next.js JSON
   const nextDataJson = $("#__NEXT_DATA__").text().trim();
 
   if (!nextDataJson) {
@@ -140,17 +202,18 @@ export const getBookFromVivat = async (isbn: string) => {
   const nextData = JSON.parse(nextDataJson) as NextData;
 
   const characteristics =
-    nextData.props?.pageProps?.product?.allCharacteristics ?? [];
+    nextData.props?.pageProps?.product?.allCharacteristics ??
+    [];
 
-  // Допоміжна функція:
-  // знайти характеристику за її code
   const getCharacteristic = (code: string) => {
     return characteristics.find(
-      (characteristic) => characteristic.code === code,
+      (characteristic) =>
+        characteristic.code === code,
     )?.value?.[0]?.text;
   };
 
-  const author = getCharacteristic("author_code_entityelement");
+  const author =
+    getCharacteristic("author_code_entityelement");
 
   const year = getCharacteristic("pub_year");
 
@@ -158,21 +221,50 @@ export const getBookFromVivat = async (isbn: string) => {
 
   const language = getCharacteristic("language");
 
-  const coverUrl = productData.image
-    ? new URL(productData.image, "https://vivat.com.ua").href
+  // 6. Беремо картинку Vivat
+  const vivatCoverUrl = productData.image
+    ? new URL(
+        productData.image,
+        "https://vivat.com.ua",
+      ).href
     : null;
 
-  // 5. Повертаємо наш формат Book
+  // 7. Переносимо обкладинку в Cloudinary
+  let coverUrl: string | null = null;
+
+  if (vivatCoverUrl) {
+    try {
+      coverUrl = await uploadCoverToCloudinary(
+        vivatCoverUrl,
+        isbn,
+      );
+    } catch (error) {
+      console.error(
+        "Не вдалося завантажити Vivat cover у Cloudinary:",
+        error,
+      );
+
+      // Якщо Cloudinary тимчасово не спрацював,
+      // хоча б повертаємо оригінальну картинку Vivat
+      coverUrl = vivatCoverUrl;
+    }
+  }
+
+  // 8. Повертаємо Book
   return {
     isbn,
-    title: productData.name ?? searchProduct.name,
+    title:
+      productData.name ??
+      searchProduct.name,
     author: author ?? null,
-    publisher: productData.brand?.name ?? null,
+    publisher:
+      productData.brand?.name ?? null,
     year: year ? Number(year) : null,
     pages: pages ? Number(pages) : null,
     language: language ?? null,
     genre,
-    description: productData.description ?? null,
+    description:
+      productData.description ?? null,
     coverUrl,
     sourceUrl: searchProduct.url,
   };
