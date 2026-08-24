@@ -32,7 +32,11 @@ const getCharacteristicValue = (
       return;
     }
 
-    const nextText = $(element).next().text().replace(/\s+/g, " ").trim();
+    const nextText = $(element)
+      .next()
+      .text()
+      .replace(/\s+/g, " ")
+      .trim();
 
     if (nextText) {
       value = nextText;
@@ -44,7 +48,7 @@ const getCharacteristicValue = (
 };
 
 export const getBookFromKnigoland = async (isbn: string) => {
-  // 1. Пошук книги за ISBN
+  // 1. Шукаємо книгу за ISBN
   const params = new URLSearchParams({
     id: "12313",
     uid: "2e611a79-8553-4ea1-adea-0052b39aa0f0",
@@ -56,32 +60,46 @@ export const getBookFromKnigoland = async (isbn: string) => {
     lang: "uk",
   });
 
-  const searchResponse = await fetch(`${SEARCH_URL}?${params.toString()}`);
+  const searchResponse = await fetch(
+    `${SEARCH_URL}?${params.toString()}`,
+  );
 
   if (!searchResponse.ok) {
-    throw new Error(`Knigoland search failed: ${searchResponse.status}`);
+    throw new Error(
+      `Knigoland search failed: ${searchResponse.status}`,
+    );
   }
 
-  const searchData = (await searchResponse.json()) as SearchResponse;
+  const searchData =
+    (await searchResponse.json()) as SearchResponse;
 
   const firstGroup = searchData.results?.items?.[0];
   const firstBook = firstGroup?.items?.[0];
 
   if (!firstBook) {
-    throw new Error(`Book with ISBN ${isbn} not found on Knigoland`);
+    throw new Error(
+      `Book with ISBN ${isbn} not found on Knigoland`,
+    );
   }
 
   if (!firstBook.url) {
-    throw new Error(`Knigoland book page URL is missing for ISBN ${isbn}`);
+    throw new Error(
+      `Knigoland book page URL is missing for ISBN ${isbn}`,
+    );
   }
 
   // 2. Відкриваємо сторінку самої книги
-  const pageUrl = firstBook.url.split("?")[0];
+  const pageUrl = new URL(firstBook.url);
+
+  // Прибираємо ?q=ISBN та інші query-параметри
+  pageUrl.search = "";
 
   const pageResponse = await fetch(pageUrl);
 
   if (!pageResponse.ok) {
-    throw new Error(`Knigoland book page failed: ${pageResponse.status}`);
+    throw new Error(
+      `Knigoland book page failed: ${pageResponse.status}`,
+    );
   }
 
   const html = await pageResponse.text();
@@ -91,18 +109,27 @@ export const getBookFromKnigoland = async (isbn: string) => {
   const pageIsbn = getCharacteristicValue($, "ISBN");
 
   const publisher =
-    getCharacteristicValue($, "Видавництво") ?? firstBook.brand ?? null;
+    getCharacteristicValue($, "Видавництво") ??
+    firstBook.brand ??
+    null;
 
-  const yearText = getCharacteristicValue($, "Рік видання");
+  const yearText =
+    getCharacteristicValue($, "Рік видання");
 
-  const pagesText = getCharacteristicValue($, "Сторінки");
+  const pagesText =
+    getCharacteristicValue($, "Сторінки");
 
   const language =
     getCharacteristicValue($, "Мова перекладу") ??
     getCharacteristicValue($, "Мова");
 
-  const year = yearText ? Number(yearText) : null;
-  const pages = pagesText ? Number(pagesText) : null;
+  const year = yearText
+    ? Number(yearText)
+    : null;
+
+  const pages = pagesText
+    ? Number(pagesText)
+    : null;
 
   // 4. Опис
   let description: string | null = null;
@@ -121,9 +148,15 @@ export const getBookFromKnigoland = async (isbn: string) => {
     while (
       current.length &&
       !current.is("h2") &&
-      !current.text().trim().startsWith("Характеристики")
+      !current
+        .text()
+        .trim()
+        .startsWith("Характеристики")
     ) {
-      const text = current.text().replace(/\s+/g, " ").trim();
+      const text = current
+        .text()
+        .replace(/\s+/g, " ")
+        .trim();
 
       if (text && text !== "Показати ще") {
         descriptionParts.push(text);
@@ -142,17 +175,24 @@ export const getBookFromKnigoland = async (isbn: string) => {
     return false;
   });
 
+  // 5. Повертаємо книгу
   return {
     isbn: pageIsbn ?? isbn,
     title: firstBook.name,
     author: null,
     publisher,
-    year: year !== null && !Number.isNaN(year) ? year : null,
-    pages: pages !== null && !Number.isNaN(pages) ? pages : null,
+    year:
+      year !== null && !Number.isNaN(year)
+        ? year
+        : null,
+    pages:
+      pages !== null && !Number.isNaN(pages)
+        ? pages
+        : null,
     language: language ?? null,
     genre: null,
     description,
     coverUrl: firstBook.picture ?? null,
-    sourceUrl: pageUrl,
+    sourceUrl: pageUrl.href,
   };
 };
