@@ -8,6 +8,8 @@ RUN npm ci
 
 COPY . .
 
+ENV DATABASE_URL="postgresql://user:password@localhost:5432/db"
+
 RUN npm run build
 
 CMD ["npm", "start"]
