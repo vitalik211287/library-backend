@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { getBookByIsbnService } from "../services/booksServiceIsbn.js";
+import { lookupBookByIsbnService } from "../services/lookupBookByIsbnService.js";
 
 export const getBookByIsbnController = async (
   req: Request<{ isbn: string }>,
@@ -8,7 +8,7 @@ export const getBookByIsbnController = async (
   try {
     const { isbn } = req.params;
 
-    const book = await getBookByIsbnService(isbn);
+    const book = await lookupBookByIsbnService(isbn);
 
     return res.json(book);
   } catch (error) {
