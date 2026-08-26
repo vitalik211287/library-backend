@@ -25,13 +25,19 @@ export const getReadingStatsService = async (bookId: string) => {
   }, 0);
 
   const progressPercent =
-    book.pages && book.pages > 0 ? (book.currentPage / book.pages) * 100 : 0;
+    book.pages && book.pages > 0
+      ? (book.currentPage / book.pages) * 100
+      : 0;
 
   const pagesPerHour =
-    totalReadingSeconds > 0 ? pagesRead / (totalReadingSeconds / 3600) : 0;
+    totalReadingSeconds > 0
+      ? pagesRead / (totalReadingSeconds / 3600)
+      : 0;
 
   const remainingPages =
-    book.pages !== null ? Math.max(book.pages - book.currentPage, 0) : null;
+    book.pages !== null
+      ? Math.max(book.pages - book.currentPage, 0)
+      : null;
 
   const estimatedRemainingSeconds =
     remainingPages !== null && pagesPerHour > 0
@@ -41,15 +47,24 @@ export const getReadingStatsService = async (bookId: string) => {
   return {
     currentPage: book.currentPage,
     totalPages: book.pages,
-    progressPercent: Math.round(progressPercent * 10) / 10,
+
+    progressPercent:
+      Math.round(progressPercent * 10) / 10,
+
     totalReadingSeconds,
+
     pagesRead,
-    pagesPerHour: Math.round(pagesPerHour * 10) / 10,
+
+    pagesPerHour:
+      Math.round(pagesPerHour),
+
     remainingPages,
+
     estimatedRemainingSeconds:
       estimatedRemainingSeconds !== null
         ? Math.round(estimatedRemainingSeconds)
         : null,
+
     sessionsCount: sessions.length,
   };
 };
