@@ -33,6 +33,21 @@ type SearchResponse = {
   };
 };
 
+type GalleryImage = {
+  thumb?: string;
+  img?: string;
+  full?: string;
+  caption?: string;
+  position?: string;
+  isMain?: boolean;
+  type?: string;
+  videoUrl?: string | null;
+};
+
+type GalleryConfig = {
+  data?: GalleryImage[];
+};
+
 export const getBookFromBookYe = async (
   isbn: string,
 ): Promise<ProviderBook> => {
@@ -133,7 +148,7 @@ export const getBookFromBookYe = async (
       );
     }
 
-    // даємо сторінці трохи часу дорендеритись
+    // Даємо сторінці трохи часу дорендеритись
     await page.waitForTimeout(1500);
 
     const html = await page.content();
@@ -208,15 +223,78 @@ export const getBookFromBookYe = async (
     let coverUrl: string | null =
       firstBook.picture ?? null;
 
-    // Пробуємо взяти кращу картинку зі сторінки
+    let fullCoverUrl: string | null = null;
+
+    // Шукаємо найбільшу версію зображення
+    // у Magento-галереї Book Ye
+    $("script[type='text/x-magento-init']").each(
+      (_, element) => {
+        const content = $(element).html();
+
+        if (
+          !content ||
+          !content.includes(
+            '"mage/gallery/gallery"',
+          )
+        ) {
+          return;
+        }
+
+        try {
+          const galleryData = JSON.parse(
+            content,
+          ) as Record<
+            string,
+            Record<string, GalleryConfig>
+          >;
+
+          const gallery =
+            galleryData[
+              "[data-gallery-role=gallery-placeholder]"
+            ]?.["mage/gallery/gallery"];
+
+          const mainImage =
+            gallery?.data?.find(
+              (image) => image.isMain,
+            ) ??
+            gallery?.data?.[0];
+
+          if (mainImage?.full) {
+            fullCoverUrl =
+              mainImage.full;
+          }
+        } catch {
+          // На сторінці можуть бути інші
+          // text/x-magento-init блоки,
+          // які нам не потрібні
+        }
+      },
+    );
+
     const ogImage = $(
       'meta[property="og:image"]',
     ).attr("content");
 
     const originalCoverUrl =
+      fullCoverUrl ??
       ogImage ??
       firstBook.picture ??
       null;
+
+    console.log(
+      "🖼️ BOOK-YE FULL COVER:",
+      fullCoverUrl,
+    );
+
+    console.log(
+      "🖼️ BOOK-YE OG IMAGE:",
+      ogImage,
+    );
+
+    console.log(
+      "🖼️ BOOK-YE SELECTED COVER:",
+      originalCoverUrl,
+    );
 
     if (originalCoverUrl) {
       try {
