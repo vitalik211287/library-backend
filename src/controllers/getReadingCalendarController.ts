@@ -1,26 +1,53 @@
-import type { Request, Response } from "express";
+import type {
+  Request,
+  Response,
+} from "express";
 
 import { getReadingCalendarService } from "../services/getReadingCalendarService.js";
 
-export const getReadingCalendarController = async (
-  req: Request,
-  res: Response,
-) => {
-  try {
-    const calendar = await getReadingCalendarService();
+export const getReadingCalendarController =
+  async (
+    req: Request,
+    res: Response,
+  ) => {
+    try {
+      const userId = req.userId;
 
-    res.status(200).json({
-      calendar,
-    });
-  } catch (error) {
-    if (error instanceof Error) {
+      if (!userId) {
+        return res.status(401).json({
+          message: "Unauthorized",
+        });
+      }
+
+      const year = Number(
+        req.query.year,
+      );
+
+      const month = Number(
+        req.query.month,
+      );
+
+      const calendar =
+        await getReadingCalendarService(
+          userId,
+          year,
+          month,
+        );
+
+      return res
+        .status(200)
+        .json(calendar);
+    } catch (error) {
+      console.error(
+        "Get reading calendar error:",
+        error,
+      );
+
       return res.status(400).json({
-        message: error.message,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to get reading calendar",
       });
     }
-
-    res.status(500).json({
-      message: "Internal server error",
-    });
-  }
-};
+  };

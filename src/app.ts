@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-
+import readingRouter from "./routes/readingRoutes.js";
 import booksRouter from "./routes/booksRoutes.js";
 import authRouter from "./routes/authRoutes.js";
 import userBooksRouter from "./routes/userBooksRoutes.js";
@@ -24,5 +24,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/user-books", userBooksRouter);
 
 app.use("/uploads", express.static("uploads"));
+
+app.use("/api/reading", readingRouter);
 
 export default app;
