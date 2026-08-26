@@ -12,6 +12,19 @@ enum ReadingStatus {
   FINISHED
 }
 
+model User {
+  id           String @id @default(uuid())
+  name         String?
+  email        String @unique
+  passwordHash String
+
+  books           UserBook[]
+  readingSessions ReadingSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Book {
   id          String  @id @default(uuid())
   isbn        String  @unique
@@ -29,10 +42,30 @@ model Book {
   status      ReadingStatus @default(NOT_STARTED)
   rating      Int?
 
+  users           UserBook[]
   readingSessions ReadingSession[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model UserBook {
+  id String @id @default(uuid())
+
+  userId String
+  bookId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  currentPage Int           @default(0)
+  status      ReadingStatus @default(NOT_STARTED)
+  rating      Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, bookId])
 }
 
 model ReadingSession {
@@ -40,6 +73,9 @@ model ReadingSession {
 
   bookId String
   book   Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  userId String?
+  user   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   startedAt  DateTime
   finishedAt DateTime?
