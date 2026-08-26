@@ -2,6 +2,8 @@ import { Router } from "express";
 
 import { registerController } from "../controllers/registerController.js";
 import { loginController } from "../controllers/loginController.js";
+import { meController } from "../controllers/meController.js";
+
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const authRouter = Router();
@@ -13,12 +15,7 @@ authRouter.post("/login", loginController);
 authRouter.get(
   "/me",
   authMiddleware,
-  (req, res) => {
-    res.json({
-      message: "Authorized",
-      userId: res.locals.userId,
-    });
-  },
+  meController,
 );
 
 export default authRouter;

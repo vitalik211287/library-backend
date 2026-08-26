@@ -1,4 +1,9 @@
-import type { NextFunction, Request, Response } from "express";
+import type {
+  NextFunction,
+  Request,
+  Response,
+} from "express";
+
 import jwt from "jsonwebtoken";
 
 type JwtPayload = {
@@ -46,7 +51,7 @@ export const authMiddleware = (
       jwtSecret,
     ) as JwtPayload;
 
-    res.locals.userId = payload.userId;
+    req.userId = payload.userId;
 
     next();
   } catch {

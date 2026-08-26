@@ -1,5 +1,13 @@
 import prisma from "../utils/prisma.js";
 
+import type { ReadingStatus } from "@prisma/client";
+
+type UpdateUserBookData = {
+  currentPage?: number;
+  status?: ReadingStatus;
+  rating?: number | null;
+};
+
 export const getUserBook = async (
   userId: string,
   bookId: string,
@@ -45,5 +53,46 @@ export const getOrCreateUserBook = async (
     return existingUserBook;
   }
 
-  return createUserBook(userId, bookId);
+  return createUserBook(
+    userId,
+    bookId,
+  );
+};
+
+export const updateUserBook = async (
+  userId: string,
+  bookId: string,
+  data: UpdateUserBookData,
+) => {
+  return prisma.userBook.upsert({
+    where: {
+      userId_bookId: {
+        userId,
+        bookId,
+      },
+    },
+
+    update: data,
+
+    create: {
+      userId,
+      bookId,
+
+      ...(data.currentPage !== undefined && {
+        currentPage: data.currentPage,
+      }),
+
+      ...(data.status !== undefined && {
+        status: data.status,
+      }),
+
+      ...(data.rating !== undefined && {
+        rating: data.rating,
+      }),
+    },
+
+    include: {
+      book: true,
+    },
+  });
 };

@@ -1,14 +1,47 @@
 import { Router } from "express";
 
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+
 import { getUserBookController } from "../controllers/getUserBookController.js";
+import { updateUserBookController } from "../controllers/updateUserBookController.js";
+
+import { startUserReadingController } from "../controllers/startUserReadingController.js";
+import { finishUserReadingController } from "../controllers/finishUserReadingController.js";
+import { getActiveUserReadingSessionController } from "../controllers/getActiveUserReadingSessionController.js";
+import { getUserReadingStatsController } from "../controllers/getUserReadingStatsController.js";
 
 const userBooksRouter = Router();
 
+userBooksRouter.use(authMiddleware);
+
 userBooksRouter.get(
   "/:bookId",
-  authMiddleware,
   getUserBookController,
+);
+
+userBooksRouter.patch(
+  "/:bookId",
+  updateUserBookController,
+);
+
+userBooksRouter.post(
+  "/:bookId/reading/start",
+  startUserReadingController,
+);
+
+userBooksRouter.post(
+  "/:bookId/reading/finish",
+  finishUserReadingController,
+);
+
+userBooksRouter.get(
+  "/:bookId/reading/active",
+  getActiveUserReadingSessionController,
+);
+
+userBooksRouter.get(
+  "/:bookId/reading/stats",
+  getUserReadingStatsController,
 );
 
 export default userBooksRouter;
