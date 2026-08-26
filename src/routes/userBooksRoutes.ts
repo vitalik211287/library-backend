@@ -9,39 +9,30 @@ import { startUserReadingController } from "../controllers/startUserReadingContr
 import { finishUserReadingController } from "../controllers/finishUserReadingController.js";
 import { getActiveUserReadingSessionController } from "../controllers/getActiveUserReadingSessionController.js";
 import { getUserReadingStatsController } from "../controllers/getUserReadingStatsController.js";
+import { pauseUserReadingController } from "../controllers/pauseUserReadingController.js";
+import { resumeUserReadingController } from "../controllers/resumeUserReadingController.js";
 
 const userBooksRouter = Router();
 
 userBooksRouter.use(authMiddleware);
 
-userBooksRouter.get(
-  "/:bookId",
-  getUserBookController,
-);
+userBooksRouter.get("/:bookId", getUserBookController);
 
-userBooksRouter.patch(
-  "/:bookId",
-  updateUserBookController,
-);
+userBooksRouter.patch("/:bookId", updateUserBookController);
 
-userBooksRouter.post(
-  "/:bookId/reading/start",
-  startUserReadingController,
-);
+userBooksRouter.post("/:bookId/reading/start", startUserReadingController);
 
-userBooksRouter.post(
-  "/:bookId/reading/finish",
-  finishUserReadingController,
-);
+userBooksRouter.post("/:bookId/reading/finish", finishUserReadingController);
 
 userBooksRouter.get(
   "/:bookId/reading/active",
   getActiveUserReadingSessionController,
 );
 
-userBooksRouter.get(
-  "/:bookId/reading/stats",
-  getUserReadingStatsController,
-);
+userBooksRouter.get("/:bookId/reading/stats", getUserReadingStatsController);
+
+userBooksRouter.post("/:bookId/reading/pause", pauseUserReadingController);
+
+userBooksRouter.post("/:bookId/reading/resume", resumeUserReadingController);
 
 export default userBooksRouter;

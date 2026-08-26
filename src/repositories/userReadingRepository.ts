@@ -53,6 +53,7 @@ export const getActiveUserReadingSession = async (
       bookId,
       finishedAt: null,
     },
+
     orderBy: {
       startedAt: "desc",
     },
@@ -74,6 +75,48 @@ export const createUserReadingSession = async (
   });
 };
 
+export const pauseUserReadingSession = async (
+  sessionId: string,
+) => {
+  return prisma.readingSession.update({
+    where: {
+      id: sessionId,
+    },
+
+    data: {
+      pausedAt: new Date(),
+    },
+  });
+};
+
+export const resumeUserReadingSession = async (
+  sessionId: string,
+  pausedAt: Date,
+  pausedSeconds: number,
+) => {
+  const currentPauseSeconds = Math.max(
+    Math.floor(
+      (Date.now() - pausedAt.getTime()) /
+        1000,
+    ),
+    0,
+  );
+
+  return prisma.readingSession.update({
+    where: {
+      id: sessionId,
+    },
+
+    data: {
+      pausedAt: null,
+
+      pausedSeconds:
+        pausedSeconds +
+        currentPauseSeconds,
+    },
+  });
+};
+
 export const finishUserReadingSession = async (
   sessionId: string,
   endPage: number,
@@ -88,6 +131,7 @@ export const finishUserReadingSession = async (
       endPage,
       durationSeconds,
       finishedAt: new Date(),
+      pausedAt: null,
     },
   });
 };
