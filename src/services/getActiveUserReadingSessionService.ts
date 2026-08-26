@@ -27,12 +27,38 @@ export const getActiveUserReadingSessionService =
       };
     }
 
-    const elapsedSeconds = Math.max(
+    const now = Date.now();
+
+    const totalElapsedSeconds = Math.max(
       Math.floor(
-        (Date.now() -
+        (now -
           session.startedAt.getTime()) /
           1000,
       ),
+      0,
+    );
+
+    let totalPausedSeconds =
+      session.pausedSeconds;
+
+    if (session.pausedAt) {
+      const currentPauseSeconds =
+        Math.max(
+          Math.floor(
+            (now -
+              session.pausedAt.getTime()) /
+              1000,
+          ),
+          0,
+        );
+
+      totalPausedSeconds +=
+        currentPauseSeconds;
+    }
+
+    const elapsedSeconds = Math.max(
+      totalElapsedSeconds -
+        totalPausedSeconds,
       0,
     );
 

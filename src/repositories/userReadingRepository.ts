@@ -121,6 +121,7 @@ export const finishUserReadingSession = async (
   sessionId: string,
   endPage: number,
   durationSeconds: number,
+  pausedSeconds: number,
 ) => {
   return prisma.readingSession.update({
     where: {
@@ -130,6 +131,7 @@ export const finishUserReadingSession = async (
     data: {
       endPage,
       durationSeconds,
+      pausedSeconds,
       finishedAt: new Date(),
       pausedAt: null,
     },

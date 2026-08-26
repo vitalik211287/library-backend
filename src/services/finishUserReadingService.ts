@@ -59,30 +59,20 @@ export const finishUserReadingService = async (
   let totalPausedSeconds =
     session.pausedSeconds;
 
-  /*
-   * Якщо користувач завершує сесію,
-   * поки вона стоїть на паузі,
-   * додаємо ще поточну незавершену паузу.
-   */
   if (session.pausedAt) {
-    const currentPauseSeconds =
-      Math.max(
-        Math.floor(
-          (Date.now() -
-            session.pausedAt.getTime()) /
-            1000,
-        ),
-        0,
-      );
+    const currentPauseSeconds = Math.max(
+      Math.floor(
+        (Date.now() -
+          session.pausedAt.getTime()) /
+          1000,
+      ),
+      0,
+    );
 
     totalPausedSeconds +=
       currentPauseSeconds;
   }
 
-  /*
-   * Реальний час читання =
-   * весь час сесії - весь час пауз.
-   */
   const durationSeconds = Math.max(
     totalElapsedSeconds -
       totalPausedSeconds,
@@ -94,6 +84,7 @@ export const finishUserReadingService = async (
       session.id,
       endPage,
       durationSeconds,
+      totalPausedSeconds,
     );
 
   const status =
