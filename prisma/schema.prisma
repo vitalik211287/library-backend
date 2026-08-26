@@ -6,6 +6,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum ReadingStatus {
+  NOT_STARTED
+  READING
+  FINISHED
+}
+
 model Book {
   id          String  @id @default(uuid())
   isbn        String  @unique
@@ -19,6 +25,29 @@ model Book {
   coverUrl    String?
   description String?
 
+  currentPage Int           @default(0)
+  status      ReadingStatus @default(NOT_STARTED)
+  rating      Int?
+
+  readingSessions ReadingSession[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ReadingSession {
+  id String @id @default(uuid())
+
+  bookId String
+  book   Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  startedAt  DateTime
+  finishedAt DateTime?
+
+  startPage Int
+  endPage   Int?
+
+  durationSeconds Int?
+
+  createdAt DateTime @default(now())
 }
