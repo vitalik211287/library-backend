@@ -15,11 +15,9 @@ export const getActiveReadingSessionController = async (
       });
     }
 
-    const session = await getActiveReadingSessionService(id);
+    const result = await getActiveReadingSessionService(id);
 
-    res.status(200).json({
-      session,
-    });
+    res.status(200).json(result);
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === "Book not found") {

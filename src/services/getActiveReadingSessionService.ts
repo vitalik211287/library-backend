@@ -12,5 +12,24 @@ export const getActiveReadingSessionService = async (
     throw new Error("Book not found");
   }
 
-  return getActiveReadingSession(bookId);
+  const session = await getActiveReadingSession(bookId);
+
+  if (!session) {
+    return {
+      session: null,
+      elapsedSeconds: 0,
+    };
+  }
+
+  const elapsedSeconds = Math.max(
+    Math.floor(
+      (Date.now() - session.startedAt.getTime()) / 1000,
+    ),
+    0,
+  );
+
+  return {
+    session,
+    elapsedSeconds,
+  };
 };
