@@ -11,6 +11,7 @@ import { getActiveUserReadingSessionController } from "../controllers/getActiveU
 import { getUserReadingStatsController } from "../controllers/getUserReadingStatsController.js";
 import { pauseUserReadingController } from "../controllers/pauseUserReadingController.js";
 import { resumeUserReadingController } from "../controllers/resumeUserReadingController.js";
+import { importUserReadingController } from "../controllers/importUserReadingController.js";
 
 const userBooksRouter = Router();
 
@@ -23,6 +24,7 @@ userBooksRouter.patch("/:bookId", updateUserBookController);
 userBooksRouter.post("/:bookId/reading/start", startUserReadingController);
 
 userBooksRouter.post("/:bookId/reading/finish", finishUserReadingController);
+userBooksRouter.post("/:bookId/reading/import", importUserReadingController);
 
 userBooksRouter.get(
   "/:bookId/reading/active",

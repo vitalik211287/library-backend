@@ -8,10 +8,7 @@ export const getBookById = async (bookId: string) => {
   });
 };
 
-export const getUserBook = async (
-  userId: string,
-  bookId: string,
-) => {
+export const getUserBook = async (userId: string, bookId: string) => {
   return prisma.userBook.findUnique({
     where: {
       userId_bookId: {
@@ -22,10 +19,7 @@ export const getUserBook = async (
   });
 };
 
-export const getOrCreateUserBook = async (
-  userId: string,
-  bookId: string,
-) => {
+export const getOrCreateUserBook = async (userId: string, bookId: string) => {
   return prisma.userBook.upsert({
     where: {
       userId_bookId: {
@@ -75,9 +69,7 @@ export const createUserReadingSession = async (
   });
 };
 
-export const pauseUserReadingSession = async (
-  sessionId: string,
-) => {
+export const pauseUserReadingSession = async (sessionId: string) => {
   return prisma.readingSession.update({
     where: {
       id: sessionId,
@@ -95,10 +87,7 @@ export const resumeUserReadingSession = async (
   pausedSeconds: number,
 ) => {
   const currentPauseSeconds = Math.max(
-    Math.floor(
-      (Date.now() - pausedAt.getTime()) /
-        1000,
-    ),
+    Math.floor((Date.now() - pausedAt.getTime()) / 1000),
     0,
   );
 
@@ -110,9 +99,7 @@ export const resumeUserReadingSession = async (
     data: {
       pausedAt: null,
 
-      pausedSeconds:
-        pausedSeconds +
-        currentPauseSeconds,
+      pausedSeconds: pausedSeconds + currentPauseSeconds,
     },
   });
 };
@@ -174,6 +161,30 @@ export const getFinishedUserReadingSessions = async (
 
     orderBy: {
       startedAt: "asc",
+    },
+  });
+};
+
+export const createImportedReadingSession = async (
+  userId: string,
+  bookId: string,
+  startedAt: Date,
+  finishedAt: Date,
+  startPage: number,
+  endPage: number,
+  durationSeconds: number,
+) => {
+  return prisma.readingSession.create({
+    data: {
+      userId,
+      bookId,
+      startedAt,
+      finishedAt,
+      startPage,
+      endPage,
+      durationSeconds,
+      pausedSeconds: 0,
+      pausedAt: null,
     },
   });
 };
