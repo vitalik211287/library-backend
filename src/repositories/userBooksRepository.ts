@@ -96,3 +96,72 @@ export const updateUserBook = async (
     },
   });
 };
+
+export const getWishlistUserBooks = async (
+  userId: string,
+) => {
+  return prisma.userBook.findMany({
+    where: {
+      userId,
+      isWishlist: true,
+    },
+
+    include: {
+      book: true,
+    },
+
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+};
+
+export const addUserBookToWishlist = async (
+  userId: string,
+  bookId: string,
+) => {
+  return prisma.userBook.upsert({
+    where: {
+      userId_bookId: {
+        userId,
+        bookId,
+      },
+    },
+
+    update: {
+      isWishlist: true,
+    },
+
+    create: {
+      userId,
+      bookId,
+      isWishlist: true,
+    },
+
+    include: {
+      book: true,
+    },
+  });
+};
+
+export const removeUserBookFromWishlist = async (
+  userId: string,
+  bookId: string,
+) => {
+  return prisma.userBook.update({
+    where: {
+      userId_bookId: {
+        userId,
+        bookId,
+      },
+    },
+
+    data: {
+      isWishlist: false,
+    },
+
+    include: {
+      book: true,
+    },
+  });
+};

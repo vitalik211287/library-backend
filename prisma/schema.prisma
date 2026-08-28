@@ -62,6 +62,8 @@ model UserBook {
   status      ReadingStatus @default(NOT_STARTED)
   rating      Int?
 
+  isWishlist Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

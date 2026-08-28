@@ -142,6 +142,7 @@ export const updateUserReadingProgress = async (
     data: {
       currentPage,
       status,
+      isWishlist: false,
     },
   });
 };
@@ -189,9 +190,7 @@ export const createImportedReadingSession = async (
   });
 };
 
-export const getCurrentUserBook = async (
-  userId: string,
-) => {
+export const getCurrentUserBook = async (userId: string) => {
   return prisma.userBook.findFirst({
     where: {
       userId,
@@ -208,9 +207,7 @@ export const getCurrentUserBook = async (
   });
 };
 
-export const getFinishedUserBooks = async (
-  userId: string,
-) => {
+export const getFinishedUserBooks = async (userId: string) => {
   return prisma.userBook.findMany({
     where: {
       userId,
@@ -223,6 +220,75 @@ export const getFinishedUserBooks = async (
 
     orderBy: {
       updatedAt: "desc",
+    },
+  });
+};
+
+export const getWishlistUserBooks = async (
+  userId: string,
+) => {
+  return prisma.userBook.findMany({
+    where: {
+      userId,
+      isWishlist: true,
+    },
+
+    include: {
+      book: true,
+    },
+
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+};
+
+export const addUserBookToWishlist = async (
+  userId: string,
+  bookId: string,
+) => {
+  return prisma.userBook.upsert({
+    where: {
+      userId_bookId: {
+        userId,
+        bookId,
+      },
+    },
+
+    update: {
+      isWishlist: true,
+    },
+
+    create: {
+      userId,
+      bookId,
+      isWishlist: true,
+    },
+
+    include: {
+      book: true,
+    },
+  });
+};
+
+export const removeUserBookFromWishlist = async (
+  userId: string,
+  bookId: string,
+) => {
+  return prisma.userBook.update({
+    where: {
+      userId_bookId: {
+        userId,
+        bookId,
+      },
+    },
+
+    data: {
+      isWishlist: false,
+    },
+
+    include: {
+      book: true,
     },
   });
 };
