@@ -190,23 +190,6 @@ export const createImportedReadingSession = async (
   });
 };
 
-export const getCurrentUserBook = async (userId: string) => {
-  return prisma.userBook.findFirst({
-    where: {
-      userId,
-      status: "READING",
-    },
-
-    include: {
-      book: true,
-    },
-
-    orderBy: {
-      updatedAt: "desc",
-    },
-  });
-};
-
 export const getFinishedUserBooks = async (userId: string) => {
   return prisma.userBook.findMany({
     where: {
@@ -289,6 +272,25 @@ export const removeUserBookFromWishlist = async (
 
     include: {
       book: true,
+    },
+  });
+};
+
+export const getCurrentUserBooks = async (
+  userId: string,
+) => {
+  return prisma.userBook.findMany({
+    where: {
+      userId,
+      status: "READING",
+    },
+
+    include: {
+      book: true,
+    },
+
+    orderBy: {
+      updatedAt: "desc",
     },
   });
 };
