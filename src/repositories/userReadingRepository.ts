@@ -207,3 +207,22 @@ export const getCurrentUserBook = async (
     },
   });
 };
+
+export const getFinishedUserBooks = async (
+  userId: string,
+) => {
+  return prisma.userBook.findMany({
+    where: {
+      userId,
+      status: "FINISHED",
+    },
+
+    include: {
+      book: true,
+    },
+
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+};
