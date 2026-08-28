@@ -12,11 +12,12 @@ import { getUserReadingStatsController } from "../controllers/getUserReadingStat
 import { pauseUserReadingController } from "../controllers/pauseUserReadingController.js";
 import { resumeUserReadingController } from "../controllers/resumeUserReadingController.js";
 import { importUserReadingController } from "../controllers/importUserReadingController.js";
+import { getCurrentUserBookController } from "../controllers/getCurrentUserBookController.js";
 
 const userBooksRouter = Router();
 
 userBooksRouter.use(authMiddleware);
-
+userBooksRouter.get("/current", getCurrentUserBookController);
 userBooksRouter.get("/:bookId", getUserBookController);
 
 userBooksRouter.patch("/:bookId", updateUserBookController);

@@ -188,3 +188,22 @@ export const createImportedReadingSession = async (
     },
   });
 };
+
+export const getCurrentUserBook = async (
+  userId: string,
+) => {
+  return prisma.userBook.findFirst({
+    where: {
+      userId,
+      status: "READING",
+    },
+
+    include: {
+      book: true,
+    },
+
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+};
