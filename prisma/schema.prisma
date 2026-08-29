@@ -17,6 +17,7 @@ model User {
   name         String?
   email        String @unique
   passwordHash String
+  avatarUrl    String?
 
   books           UserBook[]
   readingSessions ReadingSession[]
@@ -92,3 +93,4 @@ model ReadingSession {
 
   createdAt DateTime @default(now())
 }
+
