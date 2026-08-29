@@ -22,43 +22,146 @@ type MonthStat = {
   seconds: number;
 };
 
-const normalizeDate = (date: Date) => {
-  return new Date(
+const MILLISECONDS_PER_DAY =
+  24 * 60 * 60 * 1000;
+
+/* =========================
+   TIME ZONE
+========================= */
+
+const getSafeTimeZone = (
+  timeZone?: string,
+) => {
+  if (!timeZone) {
+    return "UTC";
+  }
+
+  try {
+    new Intl.DateTimeFormat(
+      "en-US",
+      {
+        timeZone,
+      },
+    ).format();
+
+    return timeZone;
+  } catch {
+    return "UTC";
+  }
+};
+
+/* =========================
+   DATE HELPERS
+========================= */
+
+const getDateKey = (
+  date: Date,
+  timeZone: string,
+) => {
+  const parts =
+    new Intl.DateTimeFormat(
+      "en-CA",
+      {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      },
+    ).formatToParts(date);
+
+  const year =
+    parts.find(
+      (part) =>
+        part.type === "year",
+    )?.value;
+
+  const month =
+    parts.find(
+      (part) =>
+        part.type === "month",
+    )?.value;
+
+  const day =
+    parts.find(
+      (part) =>
+        part.type === "day",
+    )?.value;
+
+  if (
+    !year ||
+    !month ||
+    !day
+  ) {
+    throw new Error(
+      "Failed to format date",
+    );
+  }
+
+  return `${year}-${month}-${day}`;
+};
+
+const dateKeyToDayNumber = (
+  dateKey: string,
+) => {
+  const [
+    year,
+    month,
+    day,
+  ] = dateKey
+    .split("-")
+    .map(Number);
+
+  if (
+    !year ||
+    !month ||
+    !day
+  ) {
+    throw new Error(
+      "Invalid date key",
+    );
+  }
+
+  return Math.floor(
     Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth(),
-      date.getUTCDate(),
-    ),
+      year,
+      month - 1,
+      day,
+    ) / MILLISECONDS_PER_DAY,
   );
 };
 
-const getDateKey = (date: Date) => {
-  return [
-    date.getUTCFullYear(),
+const dayNumberToDateKey = (
+  dayNumber: number,
+) => {
+  const date =
+    new Date(
+      dayNumber *
+        MILLISECONDS_PER_DAY,
+    );
+
+  const year =
+    date.getUTCFullYear();
+
+  const month =
     String(
       date.getUTCMonth() + 1,
-    ).padStart(2, "0"),
+    ).padStart(2, "0");
+
+  const day =
     String(
       date.getUTCDate(),
-    ).padStart(2, "0"),
-  ].join("-");
+    ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 };
 
-const getPreviousDay = (
-  date: Date,
-) => {
-  const previous =
-    new Date(date);
-
-  previous.setUTCDate(
-    previous.getUTCDate() - 1,
-  );
-
-  return previous;
-};
+/* =========================
+   STREAK
+========================= */
 
 const calculateStreak = (
   dates: Date[],
+  timeZone: string,
 ) => {
   if (dates.length === 0) {
     return {
@@ -68,50 +171,59 @@ const calculateStreak = (
     };
   }
 
+  /*
+   * Кожну reading session
+   * перетворюємо на локальний
+   * календарний день користувача.
+   *
+   * Кілька сесій за один день
+   * рахуються як один активний день.
+   */
   const uniqueDates = [
     ...new Set(
-      dates.map(getDateKey),
+      dates.map(
+        (date) =>
+          getDateKey(
+            date,
+            timeZone,
+          ),
+      ),
     ),
   ].sort();
 
   const dateSet =
     new Set(uniqueDates);
 
+  /* =========================
+     LONGEST STREAK
+  ========================= */
+
   let longest = 0;
   let running = 0;
-  let previousDate:
-    Date | null = null;
+
+  let previousDayNumber:
+    number | null = null;
 
   for (
     const dateKey of uniqueDates
   ) {
-    const date =
-      normalizeDate(
-        new Date(
-          `${dateKey}T00:00:00.000Z`,
-        ),
+    const dayNumber =
+      dateKeyToDayNumber(
+        dateKey,
       );
 
-    if (!previousDate) {
+    if (
+      previousDayNumber ===
+      null
+    ) {
       running = 1;
+    } else if (
+      dayNumber ===
+      previousDayNumber + 1
+    ) {
+      running += 1;
     } else {
-      const expectedDate =
-        new Date(previousDate);
-
-      expectedDate.setUTCDate(
-        expectedDate.getUTCDate() +
-          1,
-      );
-
-      if (
-        getDateKey(
-          expectedDate,
-        ) === dateKey
-      ) {
-        running += 1;
-      } else {
-        running = 1;
-      }
+      running = 1;
     }
 
     longest =
@@ -120,46 +232,78 @@ const calculateStreak = (
         running,
       );
 
-    previousDate = date;
+    previousDayNumber =
+      dayNumber;
   }
 
-  const today =
-    normalizeDate(new Date());
+  /* =========================
+     CURRENT STREAK
+  ========================= */
 
   const todayKey =
-    getDateKey(today);
+    getDateKey(
+      new Date(),
+      timeZone,
+    );
+
+  const todayDayNumber =
+    dateKeyToDayNumber(
+      todayKey,
+    );
 
   const yesterdayKey =
-    getDateKey(
-      getPreviousDay(today),
+    dayNumberToDateKey(
+      todayDayNumber - 1,
     );
 
   const readToday =
-    dateSet.has(todayKey);
+    dateSet.has(
+      todayKey,
+    );
 
-  let current = 0;
-
-  let cursor =
+  /*
+   * Якщо читали сьогодні —
+   * рахуємо streak від сьогодні.
+   *
+   * Якщо сьогодні ще не читали,
+   * але читали вчора —
+   * streak ще активний.
+   *
+   * Якщо немає читання ні
+   * сьогодні, ні вчора —
+   * current = 0.
+   */
+  let cursorDayNumber:
+    number | null =
     readToday
-      ? today
+      ? todayDayNumber
       : dateSet.has(
             yesterdayKey,
           )
-        ? getPreviousDay(
-            today,
-          )
+        ? todayDayNumber - 1
         : null;
 
+  let current = 0;
+
   while (
-    cursor &&
-    dateSet.has(
-      getDateKey(cursor),
-    )
+    cursorDayNumber !== null
   ) {
+    const cursorKey =
+      dayNumberToDateKey(
+        cursorDayNumber,
+      );
+
+    if (
+      !dateSet.has(
+        cursorKey,
+      )
+    ) {
+      break;
+    }
+
     current += 1;
 
-    cursor =
-      getPreviousDay(cursor);
+    cursorDayNumber -= 1;
   }
 
   return {
@@ -169,11 +313,21 @@ const calculateStreak = (
   };
 };
 
+/* =========================
+   USER STATS
+========================= */
+
 export const getUserStatsService =
   async (
     userId: string,
     year: number,
+    timeZone?: string,
   ) => {
+    const safeTimeZone =
+      getSafeTimeZone(
+        timeZone,
+      );
+
     const from =
       new Date(
         Date.UTC(
@@ -218,7 +372,10 @@ export const getUserStatsService =
 
     const pagesRead =
       yearSessions.reduce(
-        (total, session) => {
+        (
+          total,
+          session,
+        ) => {
           if (
             session.endPage ===
             null
@@ -240,7 +397,10 @@ export const getUserStatsService =
 
     const readingSeconds =
       yearSessions.reduce(
-        (total, session) =>
+        (
+          total,
+          session,
+        ) =>
           total +
           Math.max(
             session.durationSeconds ??
@@ -251,18 +411,15 @@ export const getUserStatsService =
       );
 
     /* =========================
-       FINISHED BOOKS IN YEAR
-
-       We consider the book
-       finished when a session
-       reaches the last page.
+       FINISHED BOOKS
     ========================= */
 
     const finishedBookIds =
       new Set<string>();
 
     for (
-      const session of yearSessions
+      const session of
+        yearSessions
     ) {
       const totalPages =
         session.book.pages;
@@ -335,11 +492,8 @@ export const getUserStatsService =
         ) => ({
           month:
             index + 1,
-
           books: 0,
-
           pages: 0,
-
           seconds: 0,
         }),
       );
@@ -362,10 +516,12 @@ export const getUserStatsService =
     }
 
     for (
-      const session of yearSessions
+      const session of
+        yearSessions
     ) {
       const month =
-        session.startedAt.getUTCMonth();
+        session.startedAt
+          .getUTCMonth();
 
       const monthStat =
         months[month];
@@ -375,7 +531,8 @@ export const getUserStatsService =
       }
 
       if (
-        session.endPage !== null
+        session.endPage !==
+        null
       ) {
         monthStat.pages +=
           Math.max(
@@ -403,7 +560,9 @@ export const getUserStatsService =
           totalPages
       ) {
         finishedBooksByMonth
-          .get(month + 1)
+          .get(
+            month + 1,
+          )
           ?.add(
             session.bookId,
           );
@@ -421,9 +580,6 @@ export const getUserStatsService =
 
     /* =========================
        GENRES
-
-       Genres use all currently
-       finished user books.
     ========================= */
 
     const genreMap =
@@ -466,8 +622,7 @@ export const getUserStatsService =
             books,
 
             percent:
-              totalGenreBooks >
-              0
+              totalGenreBooks > 0
                 ? Math.round(
                     (books /
                       totalGenreBooks) *
@@ -546,6 +701,7 @@ export const getUserStatsService =
     const streak =
       calculateStreak(
         activityDates,
+        safeTimeZone,
       );
 
     /* =========================
