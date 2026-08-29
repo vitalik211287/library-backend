@@ -65,6 +65,8 @@ model UserBook {
 
   isWishlist Boolean @default(false)
 
+  finishedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
