@@ -16,7 +16,16 @@ export const updateUserNameController =
   ) => {
     try {
       const userId =
-        res.locals.userId as string;
+        req.userId;
+
+      if (!userId) {
+        return res
+          .status(401)
+          .json({
+            message:
+              "Unauthorized",
+          });
+      }
 
       const {
         name,
@@ -76,7 +85,16 @@ export const updateUserPasswordController =
   ) => {
     try {
       const userId =
-        res.locals.userId as string;
+        req.userId;
+
+      if (!userId) {
+        return res
+          .status(401)
+          .json({
+            message:
+              "Unauthorized",
+          });
+      }
 
       const {
         currentPassword,
@@ -138,7 +156,16 @@ export const updateUserAvatarController =
   ) => {
     try {
       const userId =
-        res.locals.userId as string;
+        req.userId;
+
+      if (!userId) {
+        return res
+          .status(401)
+          .json({
+            message:
+              "Unauthorized",
+          });
+      }
 
       if (!req.file) {
         return res
