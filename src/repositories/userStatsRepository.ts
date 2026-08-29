@@ -31,7 +31,9 @@ export const getUserReadingSessionsForStats =
   };
 
 export const getAllUserReadingSessionsForStats =
-  async (userId: string) => {
+  async (
+    userId: string,
+  ) => {
     return prisma.readingSession.findMany({
       where: {
         userId,
@@ -52,7 +54,9 @@ export const getAllUserReadingSessionsForStats =
   };
 
 export const getFinishedUserBooksForStats =
-  async (userId: string) => {
+  async (
+    userId: string,
+  ) => {
     return prisma.userBook.findMany({
       where: {
         userId,
@@ -61,6 +65,40 @@ export const getFinishedUserBooksForStats =
 
       include: {
         book: true,
+      },
+    });
+  };
+
+/* =========================
+   MONTH ACTIVITY
+========================= */
+
+export const getUserReadingSessionsForMonth =
+  async (
+    userId: string,
+    from: Date,
+    to: Date,
+  ) => {
+    return prisma.readingSession.findMany({
+      where: {
+        userId,
+
+        finishedAt: {
+          not: null,
+        },
+
+        startedAt: {
+          gte: from,
+          lt: to,
+        },
+      },
+
+      include: {
+        book: true,
+      },
+
+      orderBy: {
+        startedAt: "asc",
       },
     });
   };
