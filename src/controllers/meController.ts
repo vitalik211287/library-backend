@@ -1,6 +1,11 @@
-import type { Request, Response } from "express";
+import type {
+  Request,
+  Response,
+} from "express";
 
-import { getUserById } from "../repositories/usersRepository.js";
+import {
+  getUserById,
+} from "../repositories/usersRepository.js";
 
 export const meController = async (
   req: Request,
@@ -15,7 +20,8 @@ export const meController = async (
       });
     }
 
-    const user = await getUserById(userId);
+    const user =
+      await getUserById(userId);
 
     if (!user) {
       return res.status(404).json({
@@ -28,13 +34,18 @@ export const meController = async (
         id: user.id,
         name: user.name,
         email: user.email,
+        avatarUrl: user.avatarUrl,
       },
     });
   } catch (error) {
-    console.error("Get current user error:", error);
+    console.error(
+      "Get current user error:",
+      error,
+    );
 
     return res.status(500).json({
-      message: "Failed to get current user",
+      message:
+        "Failed to get current user",
     });
   }
 };
