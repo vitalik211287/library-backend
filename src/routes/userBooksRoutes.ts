@@ -3,28 +3,42 @@ import { Router } from "express";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 import { getUserBookController } from "../controllers/getUserBookController.js";
+
 import { updateUserBookController } from "../controllers/updateUserBookController.js";
 
 import { startUserReadingController } from "../controllers/startUserReadingController.js";
+
 import { finishUserReadingController } from "../controllers/finishUserReadingController.js";
+
 import { getActiveUserReadingSessionController } from "../controllers/getActiveUserReadingSessionController.js";
+
 import { getUserReadingStatsController } from "../controllers/getUserReadingStatsController.js";
+
 import { pauseUserReadingController } from "../controllers/pauseUserReadingController.js";
+
 import { resumeUserReadingController } from "../controllers/resumeUserReadingController.js";
+
 import { importUserReadingController } from "../controllers/importUserReadingController.js";
 
 import { getCurrentUserBookController } from "../controllers/getCurrentUserBookController.js";
+
 import { getFinishedUserBooksController } from "../controllers/getFinishedUserBooksController.js";
 
 import { getWishlistController } from "../controllers/getWishlistController.js";
+
 import { addToWishlistController } from "../controllers/addToWishlistController.js";
+
 import { removeFromWishlistController } from "../controllers/removeFromWishlistController.js";
 
 import { getUserStatsController } from "../controllers/getUserStatsController.js";
+
 import { getUserActivityController } from "../controllers/getUserActivityController.js";
 
 import { getReadingGoalController } from "../controllers/getReadingGoalController.js";
+
 import { updateReadingGoalController } from "../controllers/updateReadingGoalController.js";
+
+import { getUserAchievementsController } from "../controllers/getUserAchievementsController.js";
 
 const userBooksRouter = Router();
 
@@ -47,6 +61,8 @@ userBooksRouter.get("/activity", getUserActivityController);
 userBooksRouter.get("/goals", getReadingGoalController);
 
 userBooksRouter.put("/goals", updateReadingGoalController);
+
+userBooksRouter.get("/achievements", getUserAchievementsController);
 
 /* =========================
    SINGLE BOOK
