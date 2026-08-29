@@ -21,14 +21,15 @@ model User {
 
   books           UserBook[]
   readingSessions ReadingSession[]
+  readingGoals    ReadingGoal[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Book {
-  id          String  @id @default(uuid())
-  isbn        String  @unique
+  id          String @id @default(uuid())
+  isbn        String @unique
   title       String
   author      String
   publisher   String?
@@ -39,7 +40,7 @@ model Book {
   coverUrl    String?
   description String?
 
-  currentPage Int           @default(0)
+  currentPage Int @default(0)
   status      ReadingStatus @default(NOT_STARTED)
   rating      Int?
 
@@ -59,7 +60,7 @@ model UserBook {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
-  currentPage Int           @default(0)
+  currentPage Int @default(0)
   status      ReadingStatus @default(NOT_STARTED)
   rating      Int?
 
@@ -91,8 +92,25 @@ model ReadingSession {
   durationSeconds Int?
 
   pausedAt      DateTime?
-  pausedSeconds Int      @default(0)
+  pausedSeconds Int @default(0)
 
   createdAt DateTime @default(now())
 }
 
+model ReadingGoal {
+  id String @id @default(uuid())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  year Int
+
+  booksGoal   Int?
+  pagesGoal   Int?
+  minutesGoal Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, year])
+}

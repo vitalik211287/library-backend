@@ -23,6 +23,9 @@ import { removeFromWishlistController } from "../controllers/removeFromWishlistC
 import { getUserStatsController } from "../controllers/getUserStatsController.js";
 import { getUserActivityController } from "../controllers/getUserActivityController.js";
 
+import { getReadingGoalController } from "../controllers/getReadingGoalController.js";
+import { updateReadingGoalController } from "../controllers/updateReadingGoalController.js";
+
 const userBooksRouter = Router();
 
 userBooksRouter.use(authMiddleware);
@@ -40,6 +43,10 @@ userBooksRouter.get("/wishlist", getWishlistController);
 userBooksRouter.get("/stats", getUserStatsController);
 
 userBooksRouter.get("/activity", getUserActivityController);
+
+userBooksRouter.get("/goals", getReadingGoalController);
+
+userBooksRouter.put("/goals", updateReadingGoalController);
 
 /* =========================
    SINGLE BOOK
