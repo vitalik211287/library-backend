@@ -8,10 +8,7 @@ type UpdateUserBookData = {
   rating?: number | null;
 };
 
-export const getUserBook = async (
-  userId: string,
-  bookId: string,
-) => {
+export const getUserBook = async (userId: string, bookId: string) => {
   return prisma.userBook.findUnique({
     where: {
       userId_bookId: {
@@ -25,10 +22,7 @@ export const getUserBook = async (
   });
 };
 
-export const createUserBook = async (
-  userId: string,
-  bookId: string,
-) => {
+export const createUserBook = async (userId: string, bookId: string) => {
   return prisma.userBook.create({
     data: {
       userId,
@@ -40,23 +34,14 @@ export const createUserBook = async (
   });
 };
 
-export const getOrCreateUserBook = async (
-  userId: string,
-  bookId: string,
-) => {
-  const existingUserBook = await getUserBook(
-    userId,
-    bookId,
-  );
+export const getOrCreateUserBook = async (userId: string, bookId: string) => {
+  const existingUserBook = await getUserBook(userId, bookId);
 
   if (existingUserBook) {
     return existingUserBook;
   }
 
-  return createUserBook(
-    userId,
-    bookId,
-  );
+  return createUserBook(userId, bookId);
 };
 
 export const updateUserBook = async (
@@ -64,6 +49,15 @@ export const updateUserBook = async (
   bookId: string,
   data: UpdateUserBookData,
 ) => {
+  const existingUserBook = await getUserBook(userId, bookId);
+
+  const finishedAt =
+    data.status === "FINISHED"
+      ? (existingUserBook?.finishedAt ?? new Date())
+      : data.status !== undefined
+        ? null
+        : undefined;
+
   return prisma.userBook.upsert({
     where: {
       userId_bookId: {
@@ -72,7 +66,13 @@ export const updateUserBook = async (
       },
     },
 
-    update: data,
+    update: {
+      ...data,
+
+      ...(finishedAt !== undefined && {
+        finishedAt,
+      }),
+    },
 
     create: {
       userId,
@@ -89,6 +89,10 @@ export const updateUserBook = async (
       ...(data.rating !== undefined && {
         rating: data.rating,
       }),
+
+      ...(finishedAt !== undefined && {
+        finishedAt,
+      }),
     },
 
     include: {
@@ -97,9 +101,7 @@ export const updateUserBook = async (
   });
 };
 
-export const getWishlistUserBooks = async (
-  userId: string,
-) => {
+export const getWishlistUserBooks = async (userId: string) => {
   return prisma.userBook.findMany({
     where: {
       userId,
@@ -116,10 +118,7 @@ export const getWishlistUserBooks = async (
   });
 };
 
-export const addUserBookToWishlist = async (
-  userId: string,
-  bookId: string,
-) => {
+export const addUserBookToWishlist = async (userId: string, bookId: string) => {
   return prisma.userBook.upsert({
     where: {
       userId_bookId: {

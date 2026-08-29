@@ -131,6 +131,20 @@ export const updateUserReadingProgress = async (
   currentPage: number,
   status: "READING" | "FINISHED",
 ) => {
+  const userBook = await prisma.userBook.findUnique({
+    where: {
+      userId_bookId: {
+        userId,
+        bookId,
+      },
+    },
+  });
+
+  const finishedAt =
+    status === "FINISHED"
+      ? userBook?.finishedAt ?? new Date()
+      : null;
+
   return prisma.userBook.update({
     where: {
       userId_bookId: {
@@ -143,6 +157,7 @@ export const updateUserReadingProgress = async (
       currentPage,
       status,
       isWishlist: false,
+      finishedAt,
     },
   });
 };
@@ -190,23 +205,51 @@ export const createImportedReadingSession = async (
   });
 };
 
-export const getFinishedUserBooks = async (userId: string) => {
-  return prisma.userBook.findMany({
-    where: {
-      userId,
-      status: "FINISHED",
-    },
+export const getFinishedUserBooks = async (
+  userId: string,
+  page: number,
+  limit: number,
+) => {
+  const skip = (page - 1) * limit;
 
-    include: {
-      book: true,
-    },
+  const [userBooks, total] =
+    await prisma.$transaction([
+      prisma.userBook.findMany({
+        where: {
+          userId,
+          status: "FINISHED",
+        },
 
-    orderBy: {
-      updatedAt: "desc",
-    },
-  });
+        include: {
+          book: true,
+        },
+
+        orderBy: [
+          {
+            finishedAt: "desc",
+          },
+          {
+            updatedAt: "desc",
+          },
+        ],
+
+        skip,
+        take: limit,
+      }),
+
+      prisma.userBook.count({
+        where: {
+          userId,
+          status: "FINISHED",
+        },
+      }),
+    ]);
+
+  return {
+    userBooks,
+    total,
+  };
 };
-
 export const getWishlistUserBooks = async (
   userId: string,
 ) => {

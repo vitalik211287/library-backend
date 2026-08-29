@@ -19,9 +19,31 @@ export const getFinishedUserBooksController =
         });
       }
 
+      const rawPage = Number(
+        req.query.page ?? 1,
+      );
+
+      const rawLimit = Number(
+        req.query.limit ?? 12,
+      );
+
+      const page =
+        Number.isInteger(rawPage) &&
+        rawPage > 0
+          ? rawPage
+          : 1;
+
+      const limit =
+        Number.isInteger(rawLimit) &&
+        rawLimit > 0
+          ? Math.min(rawLimit, 100)
+          : 12;
+
       const result =
         await getFinishedUserBooksService(
           userId,
+          page,
+          limit,
         );
 
       return res
