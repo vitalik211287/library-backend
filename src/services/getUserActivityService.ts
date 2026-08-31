@@ -4,6 +4,7 @@ type DayActivity = {
   day: number;
   seconds: number;
   pages: number;
+  percent: number;
   sessions: number;
 };
 
@@ -31,6 +32,8 @@ export const getUserActivityService = async (
 
       pages: 0,
 
+      percent: 0,
+
       sessions: 0,
     }),
   );
@@ -48,8 +51,14 @@ export const getUserActivityService = async (
 
     dayActivity.seconds += Math.max(session.durationSeconds ?? 0, 0);
 
-    if (session.endPage !== null) {
+    if (session.progressMode === "PAGES" && session.endPage !== null) {
       dayActivity.pages += Math.max(session.endPage - session.startPage, 0);
+    }
+
+    if (session.progressMode === "PERCENT" && session.endPercent !== null) {
+      const startPercent = session.startPercent ?? 0;
+
+      dayActivity.percent += Math.max(session.endPercent - startPercent, 0);
     }
   }
 
