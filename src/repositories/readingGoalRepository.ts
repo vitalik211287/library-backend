@@ -49,7 +49,9 @@ export const getReadingGoalProgress = async (userId: string, year: number) => {
     prisma.userBook.findMany({
       where: {
         userId,
+
         status: "FINISHED",
+
         finishedAt: {
           gte: from,
           lt: to,
@@ -64,6 +66,7 @@ export const getReadingGoalProgress = async (userId: string, year: number) => {
     prisma.readingSession.findMany({
       where: {
         userId,
+
         finishedAt: {
           gte: from,
           lt: to,
@@ -71,15 +74,18 @@ export const getReadingGoalProgress = async (userId: string, year: number) => {
       },
 
       select: {
+        progressMode: true,
+
         startPage: true,
         endPage: true,
+
         durationSeconds: true,
       },
     }),
   ]);
 
   const pages = sessions.reduce((total, session) => {
-    if (session.endPage === null) {
+    if (session.progressMode !== "PAGES" || session.endPage === null) {
       return total;
     }
 

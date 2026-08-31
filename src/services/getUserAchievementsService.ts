@@ -191,7 +191,7 @@ export const getUserAchievementsService = async (userId: string) => {
   const totalBooks = finishedBooks.length;
 
   const totalPages = sessions.reduce((total, session) => {
-    if (session.endPage === null) {
+    if (session.progressMode !== "PAGES" || session.endPage === null) {
       return total;
     }
 
@@ -209,8 +209,11 @@ export const getUserAchievementsService = async (userId: string) => {
 
   const values = {
     books: totalBooks,
+
     pages: totalPages,
+
     seconds: totalSeconds,
+
     streak: longestStreak,
   };
 
@@ -224,8 +227,11 @@ export const getUserAchievementsService = async (userId: string) => {
 
     return {
       ...achievement,
+
       current,
+
       percent,
+
       unlocked: current >= achievement.target,
     };
   });
@@ -237,7 +243,9 @@ export const getUserAchievementsService = async (userId: string) => {
   return {
     summary: {
       total: achievements.length,
+
       unlocked,
+
       locked: achievements.length - unlocked,
     },
 
