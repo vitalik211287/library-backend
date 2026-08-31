@@ -9,7 +9,13 @@ datasource db {
 enum ReadingStatus {
   NOT_STARTED
   READING
+  PAUSED
   FINISHED
+}
+
+enum ProgressMode {
+  PAGES
+  PERCENT
 }
 
 model User {
@@ -79,9 +85,13 @@ model UserBook {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
-  currentPage Int           @default(0)
-  status      ReadingStatus @default(NOT_STARTED)
-  rating      Int?
+  progressMode ProgressMode @default(PAGES)
+
+  currentPage    Int @default(0)
+  currentPercent Int @default(0)
+
+  status ReadingStatus @default(NOT_STARTED)
+  rating Int?
 
   isWishlist Boolean @default(false)
 
@@ -102,11 +112,16 @@ model ReadingSession {
   bookId String
   book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
+  progressMode ProgressMode @default(PAGES)
+
   startedAt  DateTime
   finishedAt DateTime?
 
   startPage Int
   endPage   Int?
+
+  startPercent Int?
+  endPercent   Int?
 
   durationSeconds Int?
 

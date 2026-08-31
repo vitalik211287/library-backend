@@ -1,33 +1,33 @@
 import {
   getActiveUserReadingSession,
   resumeUserReadingSession,
+  updateUserReadingProgress,
 } from "../repositories/userReadingRepository.js";
 
 export const resumeUserReadingService = async (
   userId: string,
   bookId: string,
 ) => {
-  const session =
-    await getActiveUserReadingSession(
-      userId,
-      bookId,
-    );
+  const session = await getActiveUserReadingSession(userId, bookId);
 
   if (!session) {
-    throw new Error(
-      "No active reading session",
-    );
+    throw new Error("No active reading session");
   }
 
   if (!session.pausedAt) {
-    throw new Error(
-      "Reading session is not paused",
-    );
+    throw new Error("Reading session is not paused");
   }
 
-  return resumeUserReadingSession(
+  const resumedSession = await resumeUserReadingSession(
     session.id,
     session.pausedAt,
     session.pausedSeconds,
   );
+
+  await updateUserReadingProgress(userId, bookId, {
+    progressMode: session.progressMode,
+    status: "READING",
+  });
+
+  return resumedSession;
 };

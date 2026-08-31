@@ -5,10 +5,15 @@ import {
   updateUserReadingProgress,
 } from "../repositories/userReadingRepository.js";
 
+type FinishReadingData = {
+  endPage?: number;
+  endPercent?: number;
+};
+
 export const finishUserReadingService = async (
   userId: string,
   bookId: string,
-  endPage: number,
+  data: FinishReadingData,
 ) => {
   const book = await getBookById(bookId);
 
@@ -28,24 +33,82 @@ export const finishUserReadingService = async (
     );
   }
 
-  if (!Number.isInteger(endPage)) {
-    throw new Error("Invalid end page");
+  const progressMode =
+    session.progressMode;
+
+  let endPage: number | undefined;
+  let endPercent: number | undefined;
+
+  /* =========================
+     PAGES
+  ========================= */
+
+  if (progressMode === "PAGES") {
+    if (
+      data.endPage === undefined ||
+      !Number.isInteger(data.endPage)
+    ) {
+      throw new Error(
+        "End page is required",
+      );
+    }
+
+    endPage = data.endPage;
+
+    if (endPage < session.startPage) {
+      throw new Error(
+        "End page cannot be less than start page",
+      );
+    }
+
+    if (
+      book.pages !== null &&
+      endPage > book.pages
+    ) {
+      throw new Error(
+        `Book has only ${book.pages} pages`,
+      );
+    }
   }
 
-  if (endPage < session.startPage) {
-    throw new Error(
-      "End page cannot be less than start page",
-    );
+  /* =========================
+     PERCENT
+  ========================= */
+
+  if (progressMode === "PERCENT") {
+    if (
+      data.endPercent === undefined ||
+      !Number.isInteger(data.endPercent)
+    ) {
+      throw new Error(
+        "End percent is required",
+      );
+    }
+
+    endPercent = data.endPercent;
+
+    if (
+      endPercent < 0 ||
+      endPercent > 100
+    ) {
+      throw new Error(
+        "Percent must be between 0 and 100",
+      );
+    }
+
+    const startPercent =
+      session.startPercent ?? 0;
+
+    if (endPercent < startPercent) {
+      throw new Error(
+        "End percent cannot be less than start percent",
+      );
+    }
   }
 
-  if (
-    book.pages !== null &&
-    endPage > book.pages
-  ) {
-    throw new Error(
-      "End page exceeds total book pages",
-    );
-  }
+  /* =========================
+     SESSION TIME
+  ========================= */
 
   const totalElapsedSeconds = Math.max(
     Math.floor(
@@ -79,25 +142,71 @@ export const finishUserReadingService = async (
     0,
   );
 
+  /* =========================
+     FINISH SESSION
+  ========================= */
+
   const finishedSession =
     await finishUserReadingSession(
       session.id,
-      endPage,
-      durationSeconds,
-      totalPausedSeconds,
+      {
+        progressMode,
+
+        ...(progressMode === "PAGES" &&
+          endPage !== undefined && {
+            endPage,
+          }),
+
+        ...(progressMode === "PERCENT" &&
+          endPercent !== undefined && {
+            endPercent,
+          }),
+
+        durationSeconds,
+
+        pausedSeconds:
+          totalPausedSeconds,
+      },
     );
 
-  const status =
-    book.pages !== null &&
-    endPage >= book.pages
-      ? "FINISHED"
-      : "READING";
+  /* =========================
+     BOOK STATUS
+  ========================= */
+
+  const isFinished =
+    progressMode === "PAGES"
+      ? book.pages !== null &&
+        endPage !== undefined &&
+        endPage >= book.pages
+      : endPercent === 100;
+
+  const status = isFinished
+    ? "FINISHED"
+    : "READING";
+
+  /* =========================
+     UPDATE USER BOOK
+  ========================= */
 
   await updateUserReadingProgress(
     userId,
     bookId,
-    endPage,
-    status,
+    {
+      progressMode,
+
+      ...(progressMode === "PAGES" &&
+        endPage !== undefined && {
+          currentPage: endPage,
+        }),
+
+      ...(progressMode === "PERCENT" &&
+        endPercent !== undefined && {
+          currentPercent:
+            endPercent,
+        }),
+
+      status,
+    },
   );
 
   return finishedSession;

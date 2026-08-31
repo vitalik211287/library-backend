@@ -1,4 +1,5 @@
 import prisma from "../utils/prisma.js";
+import type { ProgressMode, ReadingStatus } from "@prisma/client";
 
 export const getBookById = async (bookId: string) => {
   return prisma.book.findUnique({
@@ -54,16 +55,29 @@ export const getActiveUserReadingSession = async (
   });
 };
 
+type CreateReadingSessionData = {
+  progressMode: ProgressMode;
+  startPage?: number;
+  startPercent?: number;
+};
+
 export const createUserReadingSession = async (
   userId: string,
   bookId: string,
-  startPage: number,
+  data: CreateReadingSessionData,
 ) => {
   return prisma.readingSession.create({
     data: {
       userId,
       bookId,
-      startPage,
+
+      progressMode: data.progressMode,
+
+      startPage: data.progressMode === "PAGES" ? (data.startPage ?? 0) : 0,
+
+      startPercent:
+        data.progressMode === "PERCENT" ? (data.startPercent ?? 0) : null,
+
       startedAt: new Date(),
     },
   });
@@ -104,11 +118,17 @@ export const resumeUserReadingSession = async (
   });
 };
 
+type FinishReadingSessionData = {
+  progressMode: ProgressMode;
+  endPage?: number;
+  endPercent?: number;
+  durationSeconds: number;
+  pausedSeconds: number;
+};
+
 export const finishUserReadingSession = async (
   sessionId: string,
-  endPage: number,
-  durationSeconds: number,
-  pausedSeconds: number,
+  data: FinishReadingSessionData,
 ) => {
   return prisma.readingSession.update({
     where: {
@@ -116,20 +136,34 @@ export const finishUserReadingSession = async (
     },
 
     data: {
-      endPage,
-      durationSeconds,
-      pausedSeconds,
+      progressMode: data.progressMode,
+
+      endPage: data.progressMode === "PAGES" ? (data.endPage ?? null) : null,
+
+      endPercent:
+        data.progressMode === "PERCENT" ? (data.endPercent ?? null) : null,
+
+      durationSeconds: data.durationSeconds,
+
+      pausedSeconds: data.pausedSeconds,
+
       finishedAt: new Date(),
       pausedAt: null,
     },
   });
 };
 
+type UpdateReadingProgressData = {
+  progressMode?: ProgressMode;
+  currentPage?: number;
+  currentPercent?: number;
+  status: ReadingStatus;
+};
+
 export const updateUserReadingProgress = async (
   userId: string,
   bookId: string,
-  currentPage: number,
-  status: "READING" | "FINISHED",
+  data: UpdateReadingProgressData,
 ) => {
   const userBook = await prisma.userBook.findUnique({
     where: {
@@ -141,9 +175,7 @@ export const updateUserReadingProgress = async (
   });
 
   const finishedAt =
-    status === "FINISHED"
-      ? userBook?.finishedAt ?? new Date()
-      : null;
+    data.status === "FINISHED" ? (userBook?.finishedAt ?? new Date()) : null;
 
   return prisma.userBook.update({
     where: {
@@ -154,8 +186,19 @@ export const updateUserReadingProgress = async (
     },
 
     data: {
-      currentPage,
-      status,
+      ...(data.progressMode !== undefined && {
+        progressMode: data.progressMode,
+      }),
+
+      ...(data.currentPage !== undefined && {
+        currentPage: data.currentPage,
+      }),
+
+      ...(data.currentPercent !== undefined && {
+        currentPercent: data.currentPercent,
+      }),
+
+      status: data.status,
       isWishlist: false,
       finishedAt,
     },
@@ -212,47 +255,45 @@ export const getFinishedUserBooks = async (
 ) => {
   const skip = (page - 1) * limit;
 
-  const [userBooks, total] =
-    await prisma.$transaction([
-      prisma.userBook.findMany({
-        where: {
-          userId,
-          status: "FINISHED",
+  const [userBooks, total] = await prisma.$transaction([
+    prisma.userBook.findMany({
+      where: {
+        userId,
+        status: "FINISHED",
+      },
+
+      include: {
+        book: true,
+      },
+
+      orderBy: [
+        {
+          finishedAt: "desc",
         },
-
-        include: {
-          book: true,
+        {
+          updatedAt: "desc",
         },
+      ],
 
-        orderBy: [
-          {
-            finishedAt: "desc",
-          },
-          {
-            updatedAt: "desc",
-          },
-        ],
+      skip,
+      take: limit,
+    }),
 
-        skip,
-        take: limit,
-      }),
-
-      prisma.userBook.count({
-        where: {
-          userId,
-          status: "FINISHED",
-        },
-      }),
-    ]);
+    prisma.userBook.count({
+      where: {
+        userId,
+        status: "FINISHED",
+      },
+    }),
+  ]);
 
   return {
     userBooks,
     total,
   };
 };
-export const getWishlistUserBooks = async (
-  userId: string,
-) => {
+
+export const getWishlistUserBooks = async (userId: string) => {
   return prisma.userBook.findMany({
     where: {
       userId,
@@ -269,10 +310,7 @@ export const getWishlistUserBooks = async (
   });
 };
 
-export const addUserBookToWishlist = async (
-  userId: string,
-  bookId: string,
-) => {
+export const addUserBookToWishlist = async (userId: string, bookId: string) => {
   return prisma.userBook.upsert({
     where: {
       userId_bookId: {
@@ -319,13 +357,14 @@ export const removeUserBookFromWishlist = async (
   });
 };
 
-export const getCurrentUserBooks = async (
-  userId: string,
-) => {
+export const getCurrentUserBooks = async (userId: string) => {
   return prisma.userBook.findMany({
     where: {
       userId,
-      status: "READING",
+
+      status: {
+        in: ["READING", "PAUSED"],
+      },
     },
 
     include: {

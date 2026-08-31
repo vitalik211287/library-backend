@@ -1,6 +1,7 @@
 import {
   getActiveUserReadingSession,
   pauseUserReadingSession,
+  updateUserReadingProgress,
 } from "../repositories/userReadingRepository.js";
 
 export const pauseUserReadingService = async (
@@ -25,7 +26,20 @@ export const pauseUserReadingService = async (
     );
   }
 
-  return pauseUserReadingSession(
-    session.id,
+  const pausedSession =
+    await pauseUserReadingSession(
+      session.id,
+    );
+
+  await updateUserReadingProgress(
+    userId,
+    bookId,
+    {
+      progressMode:
+        session.progressMode,
+      status: "PAUSED",
+    },
   );
+
+  return pausedSession;
 };
