@@ -7,9 +7,17 @@ export const updateUserReadingSessionController = async (
   res: Response,
 ) => {
   try {
-    const userId = res.locals.userId as string;
+    const userId = req.userId;
 
     const { bookId, sessionId } = req.params;
+
+    if (!userId) {
+      res.status(401).json({
+        message: "Unauthorized",
+      });
+
+      return;
+    }
 
     if (typeof bookId !== "string") {
       res.status(400).json({
