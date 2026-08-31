@@ -18,11 +18,6 @@ export const getUserReadingStatsService = async (
 
   const sessions = await getFinishedUserReadingSessions(userId, bookId);
 
-  const totalReadingSeconds = sessions.reduce(
-    (total, session) => total + Math.max(session.durationSeconds ?? 0, 0),
-    0,
-  );
-
   const pageSessions = sessions.filter(
     (session) => session.progressMode === "PAGES",
   );
@@ -31,6 +26,37 @@ export const getUserReadingStatsService = async (
     (session) => session.progressMode === "PERCENT",
   );
 
+  /* =========================
+     ЗАГАЛЬНИЙ ЧАС
+  ========================= */
+
+  const totalReadingSeconds = sessions.reduce(
+    (total, session) => total + Math.max(session.durationSeconds ?? 0, 0),
+    0,
+  );
+
+  /* =========================
+     ЧАС У РЕЖИМІ СТОРІНОК
+  ========================= */
+
+  const pageReadingSeconds = pageSessions.reduce(
+    (total, session) => total + Math.max(session.durationSeconds ?? 0, 0),
+    0,
+  );
+
+  /* =========================
+     ЧАС У РЕЖИМІ ВІДСОТКІВ
+  ========================= */
+
+  const percentReadingSeconds = percentSessions.reduce(
+    (total, session) => total + Math.max(session.durationSeconds ?? 0, 0),
+    0,
+  );
+
+  /* =========================
+     ПРОЧИТАНІ СТОРІНКИ
+  ========================= */
+
   const pagesRead = pageSessions.reduce((total, session) => {
     if (session.endPage === null) {
       return total;
@@ -38,6 +64,10 @@ export const getUserReadingStatsService = async (
 
     return total + Math.max(session.endPage - session.startPage, 0);
   }, 0);
+
+  /* =========================
+     ПРОЧИТАНІ ВІДСОТКИ
+  ========================= */
 
   const percentRead = percentSessions.reduce((total, session) => {
     if (session.endPercent === null) {
@@ -49,6 +79,10 @@ export const getUserReadingStatsService = async (
     return total + Math.max(session.endPercent - startPercent, 0);
   }, 0);
 
+  /* =========================
+     ПОТОЧНИЙ ПРОГРЕС
+  ========================= */
+
   const progressPercent =
     userBook.progressMode === "PERCENT"
       ? userBook.currentPercent
@@ -56,20 +90,64 @@ export const getUserReadingStatsService = async (
         ? (userBook.currentPage / book.pages) * 100
         : 0;
 
+  /* =========================
+     ШВИДКІСТЬ — СТОРІНКИ
+  ========================= */
+
   const pagesPerHour =
-    totalReadingSeconds > 0 && pagesRead > 0
-      ? pagesRead / (totalReadingSeconds / 3600)
+    pageReadingSeconds > 0 && pagesRead > 0
+      ? pagesRead / (pageReadingSeconds / 3600)
       : 0;
+
+  /* =========================
+     ШВИДКІСТЬ — ВІДСОТКИ
+  ========================= */
+
+  const percentPerHour =
+    percentReadingSeconds > 0 && percentRead > 0
+      ? percentRead / (percentReadingSeconds / 3600)
+      : 0;
+
+  /* =========================
+     ЗАЛИШИЛОСЬ
+  ========================= */
 
   const remainingPages =
     userBook.progressMode === "PAGES" && book.pages !== null
       ? Math.max(book.pages - userBook.currentPage, 0)
       : null;
 
-  const estimatedRemainingSeconds =
-    remainingPages !== null && pagesPerHour > 0
-      ? (remainingPages / pagesPerHour) * 3600
+  const remainingPercent =
+    userBook.progressMode === "PERCENT"
+      ? Math.max(100 - userBook.currentPercent, 0)
       : null;
+
+  /* =========================
+     ОРІЄНТОВНИЙ ЧАС
+  ========================= */
+
+  let estimatedRemainingSeconds: number | null = null;
+
+  if (userBook.progressMode === "PAGES") {
+    if (remainingPages !== null && pagesPerHour > 0) {
+      estimatedRemainingSeconds = (remainingPages / pagesPerHour) * 3600;
+    }
+  }
+
+  if (userBook.progressMode === "PERCENT") {
+    if (remainingPercent !== null && percentPerHour > 0) {
+      estimatedRemainingSeconds = (remainingPercent / percentPerHour) * 3600;
+    }
+  }
+
+  /* =========================
+     НАЙДОВША СЕСІЯ
+  ========================= */
+
+  const longestSessionSeconds = sessions.reduce(
+    (longest, session) => Math.max(longest, session.durationSeconds ?? 0),
+    0,
+  );
 
   return {
     progressMode: userBook.progressMode,
@@ -87,11 +165,16 @@ export const getUserReadingStatsService = async (
 
     pagesRead,
 
-    percentRead,
+    percentRead: Math.round(percentRead * 10) / 10,
 
     pagesPerHour: Math.round(pagesPerHour),
 
+    percentPerHour: Math.round(percentPerHour * 10) / 10,
+
     remainingPages,
+
+    remainingPercent:
+      remainingPercent !== null ? Math.round(remainingPercent * 10) / 10 : null,
 
     estimatedRemainingSeconds:
       estimatedRemainingSeconds !== null
@@ -103,5 +186,7 @@ export const getUserReadingStatsService = async (
     pageSessionsCount: pageSessions.length,
 
     percentSessionsCount: percentSessions.length,
+
+    longestSessionSeconds,
   };
 };
