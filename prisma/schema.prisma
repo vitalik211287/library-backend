@@ -73,10 +73,6 @@ model Book {
   coverUrl    String?
   description String?
 
-  currentPage Int           @default(0)
-  status      ReadingStatus @default(NOT_STARTED)
-  rating      Int?
-
   users           UserBook[]
   readingSessions ReadingSession[]
 
