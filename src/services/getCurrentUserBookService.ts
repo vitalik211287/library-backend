@@ -1,33 +1,38 @@
 import { getCurrentUserBooks } from "../repositories/userReadingRepository.js";
 
-import { getActiveUserReadingSessionService } from "./getActiveUserReadingSessionService.js";
+import {
+  getActiveReadingDataForBooks,
+  getEffectiveUserBooksService,
+  getElapsedSeconds,
+} from "./effectiveUserBooksService.js";
 
-export const getCurrentUserBookService = async (userId: string) => {
+export const getCurrentUserBookService = async (
+  userId: string,
+  libraryId?: string,
+) => {
   const userBooks = await getCurrentUserBooks(userId);
 
-  const books = await Promise.all(
-    userBooks.map(async (userBook) => {
-      const { book, ...userBookData } = userBook;
+  const bookIds = userBooks.map((userBook) => userBook.bookId);
 
-      const activeReading = await getActiveUserReadingSessionService(
-        userId,
-        book.id,
-      );
+  const [books, activeSessionMap] = await Promise.all([
+    getEffectiveUserBooksService(userId, userBooks, libraryId),
 
-      return {
-        book,
-
-        userBook: userBookData,
-
-        activeSession: activeReading.session,
-
-        elapsedSeconds: activeReading.elapsedSeconds,
-      };
-    }),
-  );
+    getActiveReadingDataForBooks(userId, bookIds),
+  ]);
 
   return {
     count: books.length,
-    books,
+
+    books: books.map((book) => {
+      const activeSession = activeSessionMap.get(book.id) ?? null;
+
+      return {
+        ...book,
+
+        activeSession,
+
+        elapsedSeconds: getElapsedSeconds(activeSession),
+      };
+    }),
   };
 };
