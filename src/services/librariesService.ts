@@ -6,19 +6,28 @@ import {
   createBookInLibrary,
   createLibrary,
   deleteLibrary,
+  getLibraryBook,
+  getLibraryBookForUser,
   getLibraryBooks,
   getLibraryMembers,
   getLibraryMembership,
   getUserLibraries,
   removeLibraryMember,
+  updateLibraryBook,
+  updateLibraryBookCover,
   updateLibraryMemberRole,
   updateLibraryName,
 } from "../repositories/librariesRepository.js";
 
 import { getUserByEmail } from "../repositories/usersRepository.js";
+
 import prisma from "../utils/prisma.js";
 
 const MANAGER_ROLES: LibraryRole[] = ["OWNER", "ADMIN"];
+
+/* =========================
+   PERMISSIONS
+========================= */
 
 const assertCanManageLibrary = async (
   libraryId: string,
@@ -53,6 +62,122 @@ const assertIsLibraryOwner = async (
 
   return membership;
 };
+
+const assertBookBelongsToLibrary = async (
+  libraryId: string,
+  bookId: string,
+) => {
+  const libraryBook = await getLibraryBook(libraryId, bookId);
+
+  if (!libraryBook) {
+    throw new Error("Book not found in this library");
+  }
+
+  return libraryBook;
+};
+
+export const assertCanEditLibraryBookService = async (
+  currentUserId: string,
+  libraryId: string,
+  bookId: string,
+) => {
+  await assertCanManageLibrary(libraryId, currentUserId);
+
+  return assertBookBelongsToLibrary(libraryId, bookId);
+};
+
+/* =========================
+   EFFECTIVE BOOK
+========================= */
+
+/*
+ * Для операцій редагування, де немає UserBook.
+ */
+const getEffectiveBook = (
+  libraryBook: Awaited<ReturnType<typeof getLibraryBook>>,
+) => {
+  if (!libraryBook) {
+    throw new Error("Book not found in this library");
+  }
+
+  const { book } = libraryBook;
+
+  return {
+    ...book,
+
+    title: libraryBook.title ?? book.title,
+
+    author: libraryBook.author ?? book.author,
+
+    publisher: libraryBook.publisher ?? book.publisher,
+
+    year: libraryBook.year ?? book.year,
+
+    pages: libraryBook.pages ?? book.pages,
+
+    genre: libraryBook.genre ?? book.genre,
+
+    language: libraryBook.language ?? book.language,
+
+    coverUrl: libraryBook.coverUrl ?? book.coverUrl,
+
+    description: libraryBook.description ?? book.description,
+  };
+};
+
+/*
+ * Канонічний формат книги для frontend.
+ *
+ * Це саме той об'єкт, який повинні отримувати:
+ * Catalog
+ * Home
+ * ReadingModal
+ */
+const getEffectiveBookForUser = (
+  libraryBook: NonNullable<Awaited<ReturnType<typeof getLibraryBookForUser>>>,
+) => {
+  const { users, ...book } = libraryBook.book;
+
+  const userBook = users[0];
+
+  return {
+    ...book,
+
+    title: libraryBook.title ?? book.title,
+
+    author: libraryBook.author ?? book.author,
+
+    publisher: libraryBook.publisher ?? book.publisher,
+
+    year: libraryBook.year ?? book.year,
+
+    pages: libraryBook.pages ?? book.pages,
+
+    genre: libraryBook.genre ?? book.genre,
+
+    language: libraryBook.language ?? book.language,
+
+    coverUrl: libraryBook.coverUrl ?? book.coverUrl,
+
+    description: libraryBook.description ?? book.description,
+
+    currentPage: userBook?.currentPage ?? 0,
+
+    currentPercent: userBook?.currentPercent ?? 0,
+
+    progressMode: userBook?.progressMode ?? "PAGES",
+
+    status: userBook?.status ?? "NOT_STARTED",
+
+    rating: userBook?.rating ?? null,
+
+    isWishlist: userBook?.isWishlist ?? false,
+  };
+};
+
+/* =========================
+   LIBRARIES
+========================= */
 
 export const getMyLibrariesService = async (userId: string) => {
   return getUserLibraries(userId);
@@ -92,6 +217,10 @@ export const deleteLibraryService = async (
 
   return deleteLibrary(libraryId);
 };
+
+/* =========================
+   MEMBERS
+========================= */
 
 export const addLibraryMemberService = async (
   currentUserId: string,
@@ -196,6 +325,10 @@ export const removeLibraryMemberService = async (
   return removeLibraryMember(libraryId, memberUserId);
 };
 
+/* =========================
+   GET LIBRARY BOOKS
+========================= */
+
 export const getLibraryBooksService = async (
   userId: string,
   libraryId: string,
@@ -206,15 +339,45 @@ export const getLibraryBooksService = async (
     throw new Error("Library not found");
   }
 
-  const libraryBooks = await getLibraryBooks(libraryId);
+  const libraryBooks = await getLibraryBooks(libraryId, userId);
 
-  return libraryBooks.map((libraryBook) => libraryBook.book);
+  return libraryBooks.map((libraryBook) =>
+    getEffectiveBookForUser(libraryBook),
+  );
 };
 
-export const addBookToLibraryService = async (
+/* =========================
+   GET ONE LIBRARY BOOK
+========================= */
+
+export const getLibraryBookService = async (
   userId: string,
   libraryId: string,
-  data: Prisma.BookCreateInput,
+  bookId: string,
+) => {
+  const membership = await getLibraryMembership(libraryId, userId);
+
+  if (!membership) {
+    throw new Error("Library not found");
+  }
+
+  const libraryBook = await getLibraryBookForUser(libraryId, bookId, userId);
+
+  if (!libraryBook) {
+    throw new Error("Book not found in this library");
+  }
+
+  return getEffectiveBookForUser(libraryBook);
+};
+
+/* =========================
+   ADD BOOK
+========================= */
+
+export const assertCanAddBookToLibraryService = async (
+  userId: string,
+  libraryId: string,
+  isbn: string,
 ) => {
   const membership = await getLibraryMembership(libraryId, userId);
 
@@ -224,33 +387,174 @@ export const addBookToLibraryService = async (
 
   const existingBook = await prisma.book.findUnique({
     where: {
-      isbn: data.isbn,
+      isbn,
     },
   });
 
-  if (existingBook) {
-    const existingLibraryBook = await prisma.libraryBook.findUnique({
-      where: {
-        libraryId_bookId: {
-          libraryId,
-          bookId: existingBook.id,
-        },
-      },
-    });
+  if (!existingBook) {
+    return null;
+  }
 
-    if (existingLibraryBook) {
-      throw new Error("Book already exists in library");
-    }
-
-    await prisma.libraryBook.create({
-      data: {
+  const existingLibraryBook = await prisma.libraryBook.findUnique({
+    where: {
+      libraryId_bookId: {
         libraryId,
         bookId: existingBook.id,
       },
-    });
+    },
+  });
 
-    return existingBook;
+  if (existingLibraryBook) {
+    throw new Error("Book already exists in library");
   }
 
-  return createBookInLibrary(libraryId, data);
+  return existingBook;
+};
+
+export const addBookToLibraryService = async (
+  userId: string,
+  libraryId: string,
+  data: Prisma.BookCreateInput,
+  coverUrl?: string,
+) => {
+  const existingBook = await assertCanAddBookToLibraryService(
+    userId,
+    libraryId,
+    data.isbn,
+  );
+
+  if (existingBook) {
+    const libraryBook = await prisma.libraryBook.create({
+      data: {
+        libraryId,
+        bookId: existingBook.id,
+
+        title: data.title,
+
+        author: data.author,
+
+        ...(data.publisher !== undefined && {
+          publisher: data.publisher,
+        }),
+
+        ...(data.year !== undefined && {
+          year: data.year,
+        }),
+
+        ...(data.pages !== undefined && {
+          pages: data.pages,
+        }),
+
+        ...(data.genre !== undefined && {
+          genre: data.genre,
+        }),
+
+        ...(data.language !== undefined && {
+          language: data.language,
+        }),
+
+        ...(data.description !== undefined && {
+          description: data.description,
+        }),
+
+        ...((coverUrl || data.coverUrl) && {
+          coverUrl: coverUrl ?? data.coverUrl,
+        }),
+      },
+
+      include: {
+        book: true,
+      },
+    });
+
+    return getEffectiveBook(libraryBook);
+  }
+
+  const book = await createBookInLibrary(libraryId, data, coverUrl);
+
+  return {
+    ...book,
+
+    coverUrl: coverUrl ?? book.coverUrl,
+  };
+};
+
+/* =========================
+   UPDATE BOOK
+========================= */
+
+export const updateLibraryBookService = async (
+  currentUserId: string,
+  libraryId: string,
+  bookId: string,
+  data: Prisma.BookUpdateInput,
+) => {
+  await assertCanEditLibraryBookService(currentUserId, libraryId, bookId);
+
+  const overrideData: Prisma.LibraryBookUpdateInput = {};
+
+  if (typeof data.title === "string") {
+    overrideData.title = data.title;
+  }
+
+  if (typeof data.author === "string") {
+    overrideData.author = data.author;
+  }
+
+  if (data.publisher === null || typeof data.publisher === "string") {
+    overrideData.publisher = data.publisher;
+  }
+
+  if (data.year === null || typeof data.year === "number") {
+    overrideData.year = data.year;
+  }
+
+  if (data.pages === null || typeof data.pages === "number") {
+    overrideData.pages = data.pages;
+  }
+
+  if (data.genre === null || typeof data.genre === "string") {
+    overrideData.genre = data.genre;
+  }
+
+  if (data.language === null || typeof data.language === "string") {
+    overrideData.language = data.language;
+  }
+
+  if (data.description === null || typeof data.description === "string") {
+    overrideData.description = data.description;
+  }
+
+  if (data.coverUrl === null || typeof data.coverUrl === "string") {
+    overrideData.coverUrl = data.coverUrl;
+  }
+
+  const updatedLibraryBook = await updateLibraryBook(
+    libraryId,
+    bookId,
+    overrideData,
+  );
+
+  return getEffectiveBook(updatedLibraryBook);
+};
+
+/* =========================
+   UPDATE COVER
+========================= */
+
+export const updateLibraryBookCoverService = async (
+  currentUserId: string,
+  libraryId: string,
+  bookId: string,
+  coverUrl: string,
+) => {
+  await assertCanEditLibraryBookService(currentUserId, libraryId, bookId);
+
+  const updatedLibraryBook = await updateLibraryBookCover(
+    libraryId,
+    bookId,
+    coverUrl,
+  );
+
+  return getEffectiveBook(updatedLibraryBook);
 };

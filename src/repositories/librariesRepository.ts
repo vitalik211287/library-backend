@@ -208,13 +208,34 @@ export const addLibraryMember = async (libraryId: string, userId: string) => {
   });
 };
 
-export const getLibraryBooks = async (libraryId: string) => {
+/* =========================
+   LIBRARY BOOKS
+========================= */
+
+export const getLibraryBooks = async (libraryId: string, userId: string) => {
   return prisma.libraryBook.findMany({
     where: {
       libraryId,
     },
     include: {
-      book: true,
+      book: {
+        include: {
+          users: {
+            where: {
+              userId,
+            },
+            select: {
+              currentPage: true,
+              currentPercent: true,
+              progressMode: true,
+              status: true,
+              rating: true,
+              isWishlist: true,
+            },
+            take: 1,
+          },
+        },
+      },
     },
     orderBy: {
       addedAt: "desc",
@@ -222,9 +243,110 @@ export const getLibraryBooks = async (libraryId: string) => {
   });
 };
 
+/*
+ * Використовується для edit/permissions.
+ * Тут персональний UserBook не потрібен.
+ */
+export const getLibraryBook = async (libraryId: string, bookId: string) => {
+  return prisma.libraryBook.findUnique({
+    where: {
+      libraryId_bookId: {
+        libraryId,
+        bookId,
+      },
+    },
+    include: {
+      book: true,
+    },
+  });
+};
+
+/*
+ * Єдине джерело однієї книги для UI.
+ *
+ * Book
+ * + LibraryBook overrides
+ * + UserBook поточного користувача.
+ */
+export const getLibraryBookForUser = async (
+  libraryId: string,
+  bookId: string,
+  userId: string,
+) => {
+  return prisma.libraryBook.findUnique({
+    where: {
+      libraryId_bookId: {
+        libraryId,
+        bookId,
+      },
+    },
+    include: {
+      book: {
+        include: {
+          users: {
+            where: {
+              userId,
+            },
+            select: {
+              currentPage: true,
+              currentPercent: true,
+              progressMode: true,
+              status: true,
+              rating: true,
+              isWishlist: true,
+            },
+            take: 1,
+          },
+        },
+      },
+    },
+  });
+};
+
+export const updateLibraryBook = async (
+  libraryId: string,
+  bookId: string,
+  data: Prisma.LibraryBookUpdateInput,
+) => {
+  return prisma.libraryBook.update({
+    where: {
+      libraryId_bookId: {
+        libraryId,
+        bookId,
+      },
+    },
+    data,
+    include: {
+      book: true,
+    },
+  });
+};
+
+export const updateLibraryBookCover = async (
+  libraryId: string,
+  bookId: string,
+  coverUrl: string,
+) => {
+  return prisma.libraryBook.update({
+    where: {
+      libraryId_bookId: {
+        libraryId,
+        bookId,
+      },
+    },
+    data: {
+      coverUrl,
+    },
+    include: {
+      book: true,
+    },
+  });
+};
+
 export const createBookInLibrary = async (
   libraryId: string,
   data: Prisma.BookCreateInput,
+  coverUrl?: string,
 ) => {
   return prisma.$transaction(async (tx) => {
     const book = await tx.book.create({
@@ -235,6 +357,10 @@ export const createBookInLibrary = async (
       data: {
         libraryId,
         bookId: book.id,
+
+        ...(coverUrl && {
+          coverUrl,
+        }),
       },
     });
 

@@ -199,7 +199,18 @@ model LibraryBook {
   library Library @relation(fields: [libraryId], references: [id], onDelete: Cascade)
   book    Book    @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
-  addedAt DateTime @default(now())
+  title       String?
+  author      String?
+  publisher   String?
+  year        Int?
+  pages       Int?
+  genre       String?
+  language    String?
+  coverUrl    String?
+  description String?
+
+  addedAt   DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([libraryId, bookId])
   @@index([libraryId])
