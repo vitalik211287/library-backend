@@ -5,6 +5,7 @@ import booksRouter from "./routes/booksRoutes.js";
 import authRouter from "./routes/authRoutes.js";
 import userBooksRouter from "./routes/userBooksRoutes.js";
 import usersRouter from "./routes/usersRoutes.js";
+import librariesRouter from "./routes/librariesRoutes.js";
 
 const app = express();
 
@@ -29,5 +30,7 @@ app.use("/uploads", express.static("uploads"));
 app.use("/api/reading", readingRouter);
 
 app.use("/api/users", usersRouter);
+
+app.use("/api/libraries", librariesRouter);
 
 export default app;
