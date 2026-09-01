@@ -1,38 +1,29 @@
 import { getFinishedUserBooks } from "../repositories/userReadingRepository.js";
 
-export const getFinishedUserBooksService =
-  async (
-    userId: string,
-    page: number,
-    limit: number,
-  ) => {
-    const {
-      userBooks,
-      total,
-    } = await getFinishedUserBooks(
-      userId,
-      page,
-      limit,
-    );
+import { getEffectiveUserBooksService } from "./effectiveUserBooksService.js";
 
-    const totalPages =
-      Math.ceil(total / limit);
+export const getFinishedUserBooksService = async (
+  userId: string,
+  page: number,
+  limit: number,
+  libraryId?: string,
+) => {
+  const { userBooks, total } = await getFinishedUserBooks(userId, page, limit);
 
-    return {
-      count: userBooks.length,
-      total,
-      page,
-      limit,
-      totalPages,
+  const books = await getEffectiveUserBooksService(
+    userId,
+    userBooks,
+    libraryId,
+  );
 
-      books: userBooks.map(
-        ({
-          book,
-          ...userBook
-        }) => ({
-          book,
-          userBook,
-        }),
-      ),
-    };
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    count: books.length,
+    total,
+    page,
+    limit,
+    totalPages,
+    books,
   };
+};

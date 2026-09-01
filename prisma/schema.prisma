@@ -18,6 +18,12 @@ enum ProgressMode {
   PERCENT
 }
 
+enum LibraryRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
 model User {
   id           String  @id @default(uuid())
   name         String?
@@ -34,6 +40,8 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  libraryMemberships LibraryMember[]
 }
 
 model Follow {
@@ -65,15 +73,13 @@ model Book {
   coverUrl    String?
   description String?
 
-  currentPage Int           @default(0)
-  status      ReadingStatus @default(NOT_STARTED)
-  rating      Int?
-
   users           UserBook[]
   readingSessions ReadingSession[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  libraries LibraryBook[]
 }
 
 model UserBook {
@@ -147,4 +153,62 @@ model ReadingGoal {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, year])
+}
+
+model Library {
+  id String @id @default(uuid())
+
+  name String
+
+  members LibraryMember[]
+  books   LibraryBook[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LibraryMember {
+  id String @id @default(uuid())
+
+  libraryId String
+  userId    String
+
+  role LibraryRole @default(MEMBER)
+
+  library Library @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([libraryId, userId])
+  @@index([libraryId])
+  @@index([userId])
+}
+
+model LibraryBook {
+  id String @id @default(uuid())
+
+  libraryId String
+  bookId    String
+
+  library Library @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  book    Book    @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  title       String?
+  author      String?
+  publisher   String?
+  year        Int?
+  pages       Int?
+  genre       String?
+  language    String?
+  coverUrl    String?
+  description String?
+
+  addedAt   DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([libraryId, bookId])
+  @@index([libraryId])
+  @@index([bookId])
 }
