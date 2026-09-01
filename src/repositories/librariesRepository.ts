@@ -1,6 +1,6 @@
 import prisma from "../utils/prisma.js";
 
-import type { Prisma } from "@prisma/client";
+import type { LibraryRole, Prisma } from "@prisma/client";
 
 export const createLibraryForUser = async (
   userId: string,
@@ -67,6 +67,88 @@ export const getLibraryMembership = async (
         userId,
       },
     },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatarUrl: true,
+        },
+      },
+    },
+  });
+};
+
+export const getLibraryMembers = async (libraryId: string) => {
+  return prisma.libraryMember.findMany({
+    where: {
+      libraryId,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatarUrl: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+};
+
+export const countLibraryOwners = async (libraryId: string) => {
+  return prisma.libraryMember.count({
+    where: {
+      libraryId,
+      role: "OWNER",
+    },
+  });
+};
+
+export const updateLibraryMemberRole = async (
+  libraryId: string,
+  userId: string,
+  role: LibraryRole,
+) => {
+  return prisma.libraryMember.update({
+    where: {
+      libraryId_userId: {
+        libraryId,
+        userId,
+      },
+    },
+    data: {
+      role,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatarUrl: true,
+        },
+      },
+    },
+  });
+};
+
+export const removeLibraryMember = async (
+  libraryId: string,
+  userId: string,
+) => {
+  return prisma.libraryMember.delete({
+    where: {
+      libraryId_userId: {
+        libraryId,
+        userId,
+      },
+    },
   });
 };
 
@@ -87,12 +169,41 @@ export const createLibrary = async (userId: string, name: string) => {
   });
 };
 
+export const updateLibraryName = async (libraryId: string, name: string) => {
+  return prisma.library.update({
+    where: {
+      id: libraryId,
+    },
+    data: {
+      name,
+    },
+  });
+};
+
+export const deleteLibrary = async (libraryId: string) => {
+  return prisma.library.delete({
+    where: {
+      id: libraryId,
+    },
+  });
+};
+
 export const addLibraryMember = async (libraryId: string, userId: string) => {
   return prisma.libraryMember.create({
     data: {
       libraryId,
       userId,
       role: "MEMBER",
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatarUrl: true,
+        },
+      },
     },
   });
 };
