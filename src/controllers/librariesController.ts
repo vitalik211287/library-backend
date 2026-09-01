@@ -1,8 +1,10 @@
 import type { Request, Response } from "express";
 
 import {
+  addBookToLibraryService,
   addLibraryMemberService,
   createLibraryService,
+  getLibraryBooksService,
   getMyLibrariesService,
 } from "../services/librariesService.js";
 
@@ -116,6 +118,90 @@ export const addLibraryMemberController = async (
 
     return res.status(500).json({
       message: "Failed to add library member",
+    });
+  }
+};
+
+export const getLibraryBooksController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const userId = req.userId;
+    const { libraryId } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    if (!libraryId || typeof libraryId !== "string") {
+      return res.status(400).json({
+        message: "Library ID is required",
+      });
+    }
+
+    const books = await getLibraryBooksService(userId, libraryId);
+
+    return res.status(200).json(books);
+  } catch (error) {
+    if (error instanceof Error && error.message === "Library not found") {
+      return res.status(404).json({
+        message: error.message,
+      });
+    }
+
+    console.error("Get library books error:", error);
+
+    return res.status(500).json({
+      message: "Failed to get library books",
+    });
+  }
+};
+
+export const addBookToLibraryController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const userId = req.userId;
+    const { libraryId } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    if (!libraryId || typeof libraryId !== "string") {
+      return res.status(400).json({
+        message: "Library ID is required",
+      });
+    }
+
+    const book = await addBookToLibraryService(userId, libraryId, req.body);
+
+    return res.status(201).json(book);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === "Library not found") {
+        return res.status(404).json({
+          message: error.message,
+        });
+      }
+
+      if (error.message === "Book already exists in library") {
+        return res.status(409).json({
+          message: error.message,
+        });
+      }
+    }
+
+    console.error("Add book to library error:", error);
+
+    return res.status(500).json({
+      message: "Failed to add book to library",
     });
   }
 };
