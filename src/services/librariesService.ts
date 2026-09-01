@@ -21,6 +21,7 @@ import {
 
 import { getUserByEmail } from "../repositories/usersRepository.js";
 
+import { buildEffectiveBook } from "../utils/effectiveBook.js";
 import prisma from "../utils/prisma.js";
 
 const MANAGER_ROLES: LibraryRole[] = ["OWNER", "ADMIN"];
@@ -84,95 +85,6 @@ export const assertCanEditLibraryBookService = async (
   await assertCanManageLibrary(libraryId, currentUserId);
 
   return assertBookBelongsToLibrary(libraryId, bookId);
-};
-
-/* =========================
-   EFFECTIVE BOOK
-========================= */
-
-/*
- * Для операцій редагування, де немає UserBook.
- */
-const getEffectiveBook = (
-  libraryBook: Awaited<ReturnType<typeof getLibraryBook>>,
-) => {
-  if (!libraryBook) {
-    throw new Error("Book not found in this library");
-  }
-
-  const { book } = libraryBook;
-
-  return {
-    ...book,
-
-    title: libraryBook.title ?? book.title,
-
-    author: libraryBook.author ?? book.author,
-
-    publisher: libraryBook.publisher ?? book.publisher,
-
-    year: libraryBook.year ?? book.year,
-
-    pages: libraryBook.pages ?? book.pages,
-
-    genre: libraryBook.genre ?? book.genre,
-
-    language: libraryBook.language ?? book.language,
-
-    coverUrl: libraryBook.coverUrl ?? book.coverUrl,
-
-    description: libraryBook.description ?? book.description,
-  };
-};
-
-/*
- * Канонічний формат книги для frontend.
- *
- * Це саме той об'єкт, який повинні отримувати:
- * Catalog
- * Home
- * ReadingModal
- */
-const getEffectiveBookForUser = (
-  libraryBook: NonNullable<Awaited<ReturnType<typeof getLibraryBookForUser>>>,
-) => {
-  const { users, ...book } = libraryBook.book;
-
-  const userBook = users[0];
-
-  return {
-    ...book,
-
-    title: libraryBook.title ?? book.title,
-
-    author: libraryBook.author ?? book.author,
-
-    publisher: libraryBook.publisher ?? book.publisher,
-
-    year: libraryBook.year ?? book.year,
-
-    pages: libraryBook.pages ?? book.pages,
-
-    genre: libraryBook.genre ?? book.genre,
-
-    language: libraryBook.language ?? book.language,
-
-    coverUrl: libraryBook.coverUrl ?? book.coverUrl,
-
-    description: libraryBook.description ?? book.description,
-
-    currentPage: userBook?.currentPage ?? 0,
-
-    currentPercent: userBook?.currentPercent ?? 0,
-
-    progressMode: userBook?.progressMode ?? "PAGES",
-
-    status: userBook?.status ?? "NOT_STARTED",
-
-    rating: userBook?.rating ?? null,
-
-    isWishlist: userBook?.isWishlist ?? false,
-  };
 };
 
 /* =========================
@@ -341,9 +253,15 @@ export const getLibraryBooksService = async (
 
   const libraryBooks = await getLibraryBooks(libraryId, userId);
 
-  return libraryBooks.map((libraryBook) =>
-    getEffectiveBookForUser(libraryBook),
-  );
+  return libraryBooks.map((libraryBook) => {
+    const { users, ...book } = libraryBook.book;
+
+    return buildEffectiveBook({
+      book,
+      libraryBook,
+      userBook: users[0] ?? null,
+    });
+  });
 };
 
 /* =========================
@@ -367,7 +285,13 @@ export const getLibraryBookService = async (
     throw new Error("Book not found in this library");
   }
 
-  return getEffectiveBookForUser(libraryBook);
+  const { users, ...book } = libraryBook.book;
+
+  return buildEffectiveBook({
+    book,
+    libraryBook,
+    userBook: users[0] ?? null,
+  });
 };
 
 /* =========================
@@ -423,10 +347,16 @@ export const addBookToLibraryService = async (
     data.isbn,
   );
 
+  /*
+   * Глобальна Book вже існує.
+   * Створюємо тільки LibraryBook
+   * з даними конкретної бібліотеки.
+   */
   if (existingBook) {
     const libraryBook = await prisma.libraryBook.create({
       data: {
         libraryId,
+
         bookId: existingBook.id,
 
         title: data.title,
@@ -467,16 +397,34 @@ export const addBookToLibraryService = async (
       },
     });
 
-    return getEffectiveBook(libraryBook);
+    return buildEffectiveBook({
+      book: libraryBook.book,
+      libraryBook,
+    });
   }
 
+  /*
+   * Глобальної Book ще немає.
+   * Створюємо Book + LibraryBook.
+   */
   const book = await createBookInLibrary(libraryId, data, coverUrl);
 
-  return {
-    ...book,
+  /*
+   * Беремо щойно створений
+   * LibraryBook назад із БД,
+   * щоб EffectiveBook завжди
+   * складався одним mapper-ом.
+   */
+  const libraryBook = await getLibraryBook(libraryId, book.id);
 
-    coverUrl: coverUrl ?? book.coverUrl,
-  };
+  if (!libraryBook) {
+    throw new Error("Failed to create library book");
+  }
+
+  return buildEffectiveBook({
+    book: libraryBook.book,
+    libraryBook,
+  });
 };
 
 /* =========================
@@ -535,7 +483,10 @@ export const updateLibraryBookService = async (
     overrideData,
   );
 
-  return getEffectiveBook(updatedLibraryBook);
+  return buildEffectiveBook({
+    book: updatedLibraryBook.book,
+    libraryBook: updatedLibraryBook,
+  });
 };
 
 /* =========================
@@ -556,5 +507,8 @@ export const updateLibraryBookCoverService = async (
     coverUrl,
   );
 
-  return getEffectiveBook(updatedLibraryBook);
+  return buildEffectiveBook({
+    book: updatedLibraryBook.book,
+    libraryBook: updatedLibraryBook,
+  });
 };
