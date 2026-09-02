@@ -68,6 +68,7 @@ export const searchUsers = async (currentUserId: string, query: string) => {
       id: {
         not: currentUserId,
       },
+
       OR: [
         {
           name: {
@@ -83,18 +84,22 @@ export const searchUsers = async (currentUserId: string, query: string) => {
         },
       ],
     },
+
     select: {
       id: true,
       name: true,
       avatarUrl: true,
+
       followers: {
         where: {
           followerId: currentUserId,
         },
+
         select: {
           id: true,
         },
       },
+
       _count: {
         select: {
           followers: true,
@@ -102,9 +107,11 @@ export const searchUsers = async (currentUserId: string, query: string) => {
         },
       },
     },
+
     orderBy: {
       name: "asc",
     },
+
     take: 20,
   });
 };
@@ -117,6 +124,7 @@ export const getPublicUserById = async (
     where: {
       id: userId,
     },
+
     select: {
       id: true,
       name: true,
@@ -127,6 +135,7 @@ export const getPublicUserById = async (
         where: {
           followerId: currentUserId,
         },
+
         select: {
           id: true,
         },
@@ -145,6 +154,7 @@ export const getPublicUserById = async (
             in: ["READING", "FINISHED"],
           },
         },
+
         select: {
           status: true,
           currentPage: true,
@@ -161,6 +171,7 @@ export const getPublicUserById = async (
             },
           },
         },
+
         orderBy: {
           updatedAt: "desc",
         },
@@ -177,7 +188,9 @@ export const followUser = async (followerId: string, followingId: string) => {
         followingId,
       },
     },
+
     update: {},
+
     create: {
       followerId,
       followingId,
@@ -199,6 +212,7 @@ export const getFollowing = async (userId: string) => {
     where: {
       followerId: userId,
     },
+
     select: {
       createdAt: true,
 
@@ -217,6 +231,7 @@ export const getFollowing = async (userId: string) => {
         },
       },
     },
+
     orderBy: {
       createdAt: "desc",
     },
@@ -228,6 +243,7 @@ export const getFollowers = async (userId: string) => {
     where: {
       followingId: userId,
     },
+
     select: {
       createdAt: true,
 
@@ -236,6 +252,16 @@ export const getFollowers = async (userId: string) => {
           id: true,
           name: true,
           avatarUrl: true,
+
+          followers: {
+            where: {
+              followerId: userId,
+            },
+
+            select: {
+              id: true,
+            },
+          },
 
           _count: {
             select: {
@@ -246,6 +272,7 @@ export const getFollowers = async (userId: string) => {
         },
       },
     },
+
     orderBy: {
       createdAt: "desc",
     },

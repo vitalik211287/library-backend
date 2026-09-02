@@ -131,6 +131,8 @@ export const getFollowingService = async (userId: string) => {
 
     avatarUrl: item.following.avatarUrl,
 
+    isFollowing: true,
+
     followersCount: item.following._count.followers,
 
     followingCount: item.following._count.following,
@@ -148,6 +150,8 @@ export const getFollowersService = async (userId: string) => {
     name: item.follower.name,
 
     avatarUrl: item.follower.avatarUrl,
+
+    isFollowing: item.follower.followers.length > 0,
 
     followersCount: item.follower._count.followers,
 
