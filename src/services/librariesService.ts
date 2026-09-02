@@ -92,7 +92,18 @@ export const assertCanEditLibraryBookService = async (
 ========================= */
 
 export const getMyLibrariesService = async (userId: string) => {
-  return getUserLibraries(userId);
+  const libraries = await getUserLibraries(userId);
+
+  return libraries.map((library) => {
+    const currentMembership = library.members.find(
+      (member) => member.userId === userId,
+    );
+
+    return {
+      ...library,
+      role: currentMembership?.role ?? "MEMBER",
+    };
+  });
 };
 
 export const createLibraryService = async (userId: string, name: string) => {
