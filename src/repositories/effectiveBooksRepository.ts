@@ -19,6 +19,44 @@ export const getLibraryBookOverridesByBookIds = async (
   });
 };
 
+export const getAccessibleLibraryBooksByBookIds = async (
+  userId: string,
+  bookIds: string[],
+) => {
+  if (bookIds.length === 0) {
+    return [];
+  }
+
+  return prisma.libraryBook.findMany({
+    where: {
+      bookId: {
+        in: bookIds,
+      },
+
+      library: {
+        members: {
+          some: {
+            userId,
+          },
+        },
+      },
+    },
+
+    include: {
+      library: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+
+    orderBy: {
+      addedAt: "asc",
+    },
+  });
+};
+
 export const getActiveReadingSessionsForBooks = async (
   userId: string,
   bookIds: string[],

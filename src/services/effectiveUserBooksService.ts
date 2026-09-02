@@ -1,7 +1,8 @@
-import type { Book, UserBook } from "@prisma/client";
+import type { Book, LibraryBook, UserBook } from "@prisma/client";
 
 import {
   getActiveReadingSessionsForBooks,
+  getAccessibleLibraryBooksByBookIds,
   getLibraryBookOverridesByBookIds,
 } from "../repositories/effectiveBooksRepository.js";
 
@@ -11,6 +12,13 @@ import { buildEffectiveBook } from "../utils/effectiveBook.js";
 
 type UserBookWithBook = UserBook & {
   book: Book;
+};
+
+type AccessibleLibraryBook = LibraryBook & {
+  library: {
+    id: string;
+    name: string;
+  };
 };
 
 export const getEffectiveUserBooksService = async (
@@ -32,23 +40,90 @@ export const getEffectiveUserBooksService = async (
 
   const bookIds = userBooks.map((userBook) => userBook.bookId);
 
-  const libraryBooks = libraryId
+  const activeLibraryBooks = libraryId
     ? await getLibraryBookOverridesByBookIds(libraryId, bookIds)
     : [];
 
-  const libraryBookMap = new Map(
-    libraryBooks.map((libraryBook) => [libraryBook.bookId, libraryBook]),
+  const accessibleLibraryBooks = await getAccessibleLibraryBooksByBookIds(
+    userId,
+    bookIds,
   );
 
-  return userBooks.map((userBook) =>
-    buildEffectiveBook({
+  const activeLibraryBookMap = new Map(
+    activeLibraryBooks.map((libraryBook) => [libraryBook.bookId, libraryBook]),
+  );
+
+  const accessibleLibraryBooksMap = new Map<string, AccessibleLibraryBook[]>();
+
+  accessibleLibraryBooks.forEach((libraryBook) => {
+    const existing = accessibleLibraryBooksMap.get(libraryBook.bookId) ?? [];
+
+    existing.push(libraryBook);
+
+    accessibleLibraryBooksMap.set(libraryBook.bookId, existing);
+  });
+
+  return userBooks.map((userBook) => {
+    const activeLibraryBook = activeLibraryBookMap.get(userBook.bookId) ?? null;
+
+    const accessibleBooks =
+      accessibleLibraryBooksMap.get(userBook.bookId) ?? [];
+
+    const fallbackLibraryBook =
+      accessibleBooks.find(
+        (libraryBook) =>
+          libraryBook.libraryId !== libraryId && Boolean(libraryBook.coverUrl),
+      ) ??
+      accessibleBooks.find(
+        (libraryBook) => libraryBook.libraryId !== libraryId,
+      ) ??
+      null;
+
+    const effectiveBook = buildEffectiveBook({
       book: userBook.book,
 
-      libraryBook: libraryBookMap.get(userBook.bookId) ?? null,
+      libraryBook: activeLibraryBook,
 
       userBook,
-    }),
-  );
+    });
+
+    /*
+     * Якщо книга є в активній бібліотеці —
+     * вона належить поточному контексту.
+     */
+    if (activeLibraryBook) {
+      return {
+        ...effectiveBook,
+
+        sourceLibrary: null,
+      };
+    }
+
+    /*
+     * Книги немає в активній бібліотеці.
+     * Якщо вона є в іншій доступній бібліотеці —
+     * використовуємо її обкладинку як fallback
+     * і повідомляємо frontend, звідки книга.
+     */
+    if (fallbackLibraryBook) {
+      return {
+        ...effectiveBook,
+
+        coverUrl: fallbackLibraryBook.coverUrl ?? effectiveBook.coverUrl,
+
+        sourceLibrary: {
+          id: fallbackLibraryBook.library.id,
+          name: fallbackLibraryBook.library.name,
+        },
+      };
+    }
+
+    return {
+      ...effectiveBook,
+
+      sourceLibrary: null,
+    };
+  });
 };
 
 export const getActiveReadingDataForBooks = async (
