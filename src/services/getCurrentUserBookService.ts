@@ -1,4 +1,4 @@
-import { getCurrentUserBooks } from "../repositories/userReadingRepository.js";
+import { getCurrentUserBooks } from "../repositories/userBooksRepository.js";
 
 import {
   getActiveReadingDataForBooks,

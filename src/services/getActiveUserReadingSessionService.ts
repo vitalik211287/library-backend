@@ -1,69 +1,48 @@
-import {
-  getActiveUserReadingSession,
-  getBookById,
-} from "../repositories/userReadingRepository.js";
+import { getBookById } from "../repositories/booksRepository.js";
 
-export const getActiveUserReadingSessionService =
-  async (
-    userId: string,
-    bookId: string,
-  ) => {
-    const book = await getBookById(bookId);
+import { getActiveUserReadingSession } from "../repositories/userReadingRepository.js";
 
-    if (!book) {
-      throw new Error("Book not found");
-    }
+export const getActiveUserReadingSessionService = async (
+  userId: string,
+  bookId: string,
+) => {
+  const book = await getBookById(bookId);
 
-    const session =
-      await getActiveUserReadingSession(
-        userId,
-        bookId,
-      );
+  if (!book) {
+    throw new Error("Book not found");
+  }
 
-    if (!session) {
-      return {
-        session: null,
-        elapsedSeconds: 0,
-      };
-    }
+  const session = await getActiveUserReadingSession(userId, bookId);
 
-    const now = Date.now();
-
-    const totalElapsedSeconds = Math.max(
-      Math.floor(
-        (now -
-          session.startedAt.getTime()) /
-          1000,
-      ),
-      0,
-    );
-
-    let totalPausedSeconds =
-      session.pausedSeconds;
-
-    if (session.pausedAt) {
-      const currentPauseSeconds =
-        Math.max(
-          Math.floor(
-            (now -
-              session.pausedAt.getTime()) /
-              1000,
-          ),
-          0,
-        );
-
-      totalPausedSeconds +=
-        currentPauseSeconds;
-    }
-
-    const elapsedSeconds = Math.max(
-      totalElapsedSeconds -
-        totalPausedSeconds,
-      0,
-    );
-
+  if (!session) {
     return {
-      session,
-      elapsedSeconds,
+      session: null,
+      elapsedSeconds: 0,
     };
+  }
+
+  const now = Date.now();
+
+  const totalElapsedSeconds = Math.max(
+    Math.floor((now - session.startedAt.getTime()) / 1000),
+    0,
+  );
+
+  let totalPausedSeconds = session.pausedSeconds;
+
+  if (session.pausedAt) {
+    const currentPauseSeconds = Math.max(
+      Math.floor((now - session.pausedAt.getTime()) / 1000),
+      0,
+    );
+
+    totalPausedSeconds += currentPauseSeconds;
+  }
+
+  const elapsedSeconds = Math.max(totalElapsedSeconds - totalPausedSeconds, 0);
+
+  return {
+    session,
+    elapsedSeconds,
   };
+};

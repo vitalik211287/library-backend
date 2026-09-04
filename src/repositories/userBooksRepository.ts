@@ -1,9 +1,6 @@
 import prisma from "../utils/prisma.js";
 
-import type {
-  ProgressMode,
-  ReadingStatus,
-} from "@prisma/client";
+import type { ProgressMode, ReadingStatus } from "@prisma/client";
 
 type UpdateUserBookData = {
   progressMode?: ProgressMode;
@@ -13,10 +10,20 @@ type UpdateUserBookData = {
   rating?: number | null;
 };
 
-export const getUserBook = async (
-  userId: string,
-  bookId: string,
-) => {
+type UpdateReadingProgressData = {
+  progressMode?: ProgressMode;
+  currentPage?: number;
+  currentPercent?: number;
+  status: ReadingStatus;
+};
+
+type UpdateUserBookProgressOnlyData = {
+  progressMode: ProgressMode;
+  currentPage?: number;
+  currentPercent?: number;
+};
+
+export const getUserBook = async (userId: string, bookId: string) => {
   return prisma.userBook.findUnique({
     where: {
       userId_bookId: {
@@ -31,10 +38,7 @@ export const getUserBook = async (
   });
 };
 
-export const createUserBook = async (
-  userId: string,
-  bookId: string,
-) => {
+export const createUserBook = async (userId: string, bookId: string) => {
   return prisma.userBook.create({
     data: {
       userId,
@@ -47,24 +51,26 @@ export const createUserBook = async (
   });
 };
 
-export const getOrCreateUserBook = async (
-  userId: string,
-  bookId: string,
-) => {
-  const existingUserBook =
-    await getUserBook(
+export const getOrCreateUserBook = async (userId: string, bookId: string) => {
+  return prisma.userBook.upsert({
+    where: {
+      userId_bookId: {
+        userId,
+        bookId,
+      },
+    },
+
+    update: {},
+
+    create: {
       userId,
       bookId,
-    );
+    },
 
-  if (existingUserBook) {
-    return existingUserBook;
-  }
-
-  return createUserBook(
-    userId,
-    bookId,
-  );
+    include: {
+      book: true,
+    },
+  });
 };
 
 export const updateUserBook = async (
@@ -72,16 +78,11 @@ export const updateUserBook = async (
   bookId: string,
   data: UpdateUserBookData,
 ) => {
-  const existingUserBook =
-    await getUserBook(
-      userId,
-      bookId,
-    );
+  const existingUserBook = await getUserBook(userId, bookId);
 
   const finishedAt =
     data.status === "FINISHED"
-      ? (existingUserBook?.finishedAt ??
-        new Date())
+      ? (existingUserBook?.finishedAt ?? new Date())
       : data.status !== undefined
         ? null
         : undefined;
@@ -95,22 +96,16 @@ export const updateUserBook = async (
     },
 
     update: {
-      ...(data.progressMode !==
-        undefined && {
-        progressMode:
-          data.progressMode,
+      ...(data.progressMode !== undefined && {
+        progressMode: data.progressMode,
       }),
 
-      ...(data.currentPage !==
-        undefined && {
-        currentPage:
-          data.currentPage,
+      ...(data.currentPage !== undefined && {
+        currentPage: data.currentPage,
       }),
 
-      ...(data.currentPercent !==
-        undefined && {
-        currentPercent:
-          data.currentPercent,
+      ...(data.currentPercent !== undefined && {
+        currentPercent: data.currentPercent,
       }),
 
       ...(data.status !== undefined && {
@@ -130,22 +125,16 @@ export const updateUserBook = async (
       userId,
       bookId,
 
-      ...(data.progressMode !==
-        undefined && {
-        progressMode:
-          data.progressMode,
+      ...(data.progressMode !== undefined && {
+        progressMode: data.progressMode,
       }),
 
-      ...(data.currentPage !==
-        undefined && {
-        currentPage:
-          data.currentPage,
+      ...(data.currentPage !== undefined && {
+        currentPage: data.currentPage,
       }),
 
-      ...(data.currentPercent !==
-        undefined && {
-        currentPercent:
-          data.currentPercent,
+      ...(data.currentPercent !== undefined && {
+        currentPercent: data.currentPercent,
       }),
 
       ...(data.status !== undefined && {
@@ -167,74 +156,203 @@ export const updateUserBook = async (
   });
 };
 
-export const getWishlistUserBooks =
-  async (
-    userId: string,
-  ) => {
-    return prisma.userBook.findMany({
-      where: {
-        userId,
-        isWishlist: true,
-      },
-
-      include: {
-        book: true,
-      },
-
-      orderBy: {
-        updatedAt: "desc",
-      },
-    });
-  };
-
-export const addUserBookToWishlist =
-  async (
-    userId: string,
-    bookId: string,
-  ) => {
-    return prisma.userBook.upsert({
-      where: {
-        userId_bookId: {
-          userId,
-          bookId,
-        },
-      },
-
-      update: {
-        isWishlist: true,
-      },
-
-      create: {
+export const updateUserReadingProgress = async (
+  userId: string,
+  bookId: string,
+  data: UpdateReadingProgressData,
+) => {
+  const userBook = await prisma.userBook.findUnique({
+    where: {
+      userId_bookId: {
         userId,
         bookId,
-        isWishlist: true,
       },
+    },
+  });
 
-      include: {
-        book: true,
+  const finishedAt =
+    data.status === "FINISHED" ? (userBook?.finishedAt ?? new Date()) : null;
+
+  return prisma.userBook.update({
+    where: {
+      userId_bookId: {
+        userId,
+        bookId,
       },
-    });
-  };
+    },
 
-export const removeUserBookFromWishlist =
-  async (
-    userId: string,
-    bookId: string,
-  ) => {
-    return prisma.userBook.update({
+    data: {
+      ...(data.progressMode !== undefined && {
+        progressMode: data.progressMode,
+      }),
+
+      ...(data.currentPage !== undefined && {
+        currentPage: data.currentPage,
+      }),
+
+      ...(data.currentPercent !== undefined && {
+        currentPercent: data.currentPercent,
+      }),
+
+      status: data.status,
+      isWishlist: false,
+      finishedAt,
+    },
+  });
+};
+
+export const updateUserBookProgressOnly = async (
+  userId: string,
+  bookId: string,
+  data: UpdateUserBookProgressOnlyData,
+) => {
+  return prisma.userBook.update({
+    where: {
+      userId_bookId: {
+        userId,
+        bookId,
+      },
+    },
+
+    data: {
+      progressMode: data.progressMode,
+
+      ...(data.currentPage !== undefined && {
+        currentPage: data.currentPage,
+      }),
+
+      ...(data.currentPercent !== undefined && {
+        currentPercent: data.currentPercent,
+      }),
+    },
+  });
+};
+
+export const getFinishedUserBooks = async (
+  userId: string,
+  page: number,
+  limit: number,
+) => {
+  const skip = (page - 1) * limit;
+
+  const [userBooks, total] = await prisma.$transaction([
+    prisma.userBook.findMany({
       where: {
-        userId_bookId: {
-          userId,
-          bookId,
-        },
-      },
-
-      data: {
-        isWishlist: false,
+        userId,
+        status: "FINISHED",
       },
 
       include: {
         book: true,
       },
-    });
+
+      orderBy: [
+        {
+          finishedAt: "desc",
+        },
+        {
+          updatedAt: "desc",
+        },
+      ],
+
+      skip,
+      take: limit,
+    }),
+
+    prisma.userBook.count({
+      where: {
+        userId,
+        status: "FINISHED",
+      },
+    }),
+  ]);
+
+  return {
+    userBooks,
+    total,
   };
+};
+
+export const getWishlistUserBooks = async (userId: string) => {
+  return prisma.userBook.findMany({
+    where: {
+      userId,
+      isWishlist: true,
+    },
+
+    include: {
+      book: true,
+    },
+
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+};
+
+export const addUserBookToWishlist = async (userId: string, bookId: string) => {
+  return prisma.userBook.upsert({
+    where: {
+      userId_bookId: {
+        userId,
+        bookId,
+      },
+    },
+
+    update: {
+      isWishlist: true,
+    },
+
+    create: {
+      userId,
+      bookId,
+      isWishlist: true,
+    },
+
+    include: {
+      book: true,
+    },
+  });
+};
+
+export const removeUserBookFromWishlist = async (
+  userId: string,
+  bookId: string,
+) => {
+  return prisma.userBook.update({
+    where: {
+      userId_bookId: {
+        userId,
+        bookId,
+      },
+    },
+
+    data: {
+      isWishlist: false,
+    },
+
+    include: {
+      book: true,
+    },
+  });
+};
+
+export const getCurrentUserBooks = async (userId: string) => {
+  return prisma.userBook.findMany({
+    where: {
+      userId,
+
+      status: {
+        in: ["READING", "PAUSED"],
+      },
+    },
+
+    include: {
+      book: true,
+    },
+
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+};

@@ -1,4 +1,4 @@
-import { getFinishedUserBooks } from "../repositories/userReadingRepository.js";
+import { getFinishedUserBooks } from "../repositories/userBooksRepository.js";
 
 import { getEffectiveUserBooksService } from "./effectiveUserBooksService.js";
 

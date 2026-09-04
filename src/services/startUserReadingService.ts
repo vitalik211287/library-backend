@@ -1,11 +1,14 @@
 import type { ProgressMode } from "@prisma/client";
+import { getBookById } from "../repositories/booksRepository.js";
+
+import {
+  getOrCreateUserBook,
+  updateUserReadingProgress,
+} from "../repositories/userBooksRepository.js";
 
 import {
   createUserReadingSession,
   getActiveUserReadingSession,
-  getBookById,
-  getOrCreateUserBook,
-  updateUserReadingProgress,
 } from "../repositories/userReadingRepository.js";
 
 type StartReadingData = {

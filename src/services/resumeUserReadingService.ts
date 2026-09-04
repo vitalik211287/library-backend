@@ -1,7 +1,8 @@
+import { updateUserReadingProgress } from "../repositories/userBooksRepository.js";
+
 import {
   getActiveUserReadingSession,
   resumeUserReadingSession,
-  updateUserReadingProgress,
 } from "../repositories/userReadingRepository.js";
 
 export const resumeUserReadingService = async (

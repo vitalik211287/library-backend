@@ -1,8 +1,8 @@
-import {
-  getBookById,
-  getFinishedUserReadingSessions,
-  getOrCreateUserBook,
-} from "../repositories/userReadingRepository.js";
+import { getBookById } from "../repositories/booksRepository.js";
+
+import { getOrCreateUserBook } from "../repositories/userBooksRepository.js";
+
+import { getFinishedUserReadingSessions } from "../repositories/userReadingRepository.js";
 
 export const getUserReadingStatsService = async (
   userId: string,

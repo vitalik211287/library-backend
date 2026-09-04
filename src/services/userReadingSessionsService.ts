@@ -1,11 +1,15 @@
+import { getBookById } from "../repositories/booksRepository.js";
+
+import {
+  getUserBook,
+  updateUserBookProgressOnly,
+} from "../repositories/userBooksRepository.js";
+
 import {
   deleteUserReadingSession,
-  getBookById,
   getFinishedUserReadingSessions,
   getLatestFinishedUserReadingSession,
-  getUserBook,
   getUserReadingSessionById,
-  updateUserBookProgressOnly,
   updateUserReadingSessionProgress,
 } from "../repositories/userReadingRepository.js";
 

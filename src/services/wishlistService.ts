@@ -1,9 +1,10 @@
+import { getBookById } from "../repositories/booksRepository.js";
+
 import {
-  getBookById,
-  getWishlistUserBooks,
   addUserBookToWishlist,
+  getWishlistUserBooks,
   removeUserBookFromWishlist,
-} from "../repositories/userReadingRepository.js";
+} from "../repositories/userBooksRepository.js";
 
 import { getEffectiveUserBooksService } from "./effectiveUserBooksService.js";
 

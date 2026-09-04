@@ -1,8 +1,10 @@
+import { getBookById } from "../repositories/booksRepository.js";
+
+import { updateUserReadingProgress } from "../repositories/userBooksRepository.js";
+
 import {
   finishUserReadingSession,
   getActiveUserReadingSession,
-  getBookById,
-  updateUserReadingProgress,
 } from "../repositories/userReadingRepository.js";
 
 type FinishReadingData = {
@@ -21,20 +23,13 @@ export const finishUserReadingService = async (
     throw new Error("Book not found");
   }
 
-  const session =
-    await getActiveUserReadingSession(
-      userId,
-      bookId,
-    );
+  const session = await getActiveUserReadingSession(userId, bookId);
 
   if (!session) {
-    throw new Error(
-      "No active reading session",
-    );
+    throw new Error("No active reading session");
   }
 
-  const progressMode =
-    session.progressMode;
+  const progressMode = session.progressMode;
 
   let endPage: number | undefined;
   let endPercent: number | undefined;
@@ -44,30 +39,18 @@ export const finishUserReadingService = async (
   ========================= */
 
   if (progressMode === "PAGES") {
-    if (
-      data.endPage === undefined ||
-      !Number.isInteger(data.endPage)
-    ) {
-      throw new Error(
-        "End page is required",
-      );
+    if (data.endPage === undefined || !Number.isInteger(data.endPage)) {
+      throw new Error("End page is required");
     }
 
     endPage = data.endPage;
 
     if (endPage < session.startPage) {
-      throw new Error(
-        "End page cannot be less than start page",
-      );
+      throw new Error("End page cannot be less than start page");
     }
 
-    if (
-      book.pages !== null &&
-      endPage > book.pages
-    ) {
-      throw new Error(
-        `Book has only ${book.pages} pages`,
-      );
+    if (book.pages !== null && endPage > book.pages) {
+      throw new Error(`Book has only ${book.pages} pages`);
     }
   }
 
@@ -76,33 +59,20 @@ export const finishUserReadingService = async (
   ========================= */
 
   if (progressMode === "PERCENT") {
-    if (
-      data.endPercent === undefined ||
-      !Number.isInteger(data.endPercent)
-    ) {
-      throw new Error(
-        "End percent is required",
-      );
+    if (data.endPercent === undefined || !Number.isInteger(data.endPercent)) {
+      throw new Error("End percent is required");
     }
 
     endPercent = data.endPercent;
 
-    if (
-      endPercent < 0 ||
-      endPercent > 100
-    ) {
-      throw new Error(
-        "Percent must be between 0 and 100",
-      );
+    if (endPercent < 0 || endPercent > 100) {
+      throw new Error("Percent must be between 0 and 100");
     }
 
-    const startPercent =
-      session.startPercent ?? 0;
+    const startPercent = session.startPercent ?? 0;
 
     if (endPercent < startPercent) {
-      throw new Error(
-        "End percent cannot be less than start percent",
-      );
+      throw new Error("End percent cannot be less than start percent");
     }
   }
 
@@ -111,63 +81,44 @@ export const finishUserReadingService = async (
   ========================= */
 
   const totalElapsedSeconds = Math.max(
-    Math.floor(
-      (Date.now() -
-        session.startedAt.getTime()) /
-        1000,
-    ),
+    Math.floor((Date.now() - session.startedAt.getTime()) / 1000),
     0,
   );
 
-  let totalPausedSeconds =
-    session.pausedSeconds;
+  let totalPausedSeconds = session.pausedSeconds;
 
   if (session.pausedAt) {
     const currentPauseSeconds = Math.max(
-      Math.floor(
-        (Date.now() -
-          session.pausedAt.getTime()) /
-          1000,
-      ),
+      Math.floor((Date.now() - session.pausedAt.getTime()) / 1000),
       0,
     );
 
-    totalPausedSeconds +=
-      currentPauseSeconds;
+    totalPausedSeconds += currentPauseSeconds;
   }
 
-  const durationSeconds = Math.max(
-    totalElapsedSeconds -
-      totalPausedSeconds,
-    0,
-  );
+  const durationSeconds = Math.max(totalElapsedSeconds - totalPausedSeconds, 0);
 
   /* =========================
      FINISH SESSION
   ========================= */
 
-  const finishedSession =
-    await finishUserReadingSession(
-      session.id,
-      {
-        progressMode,
+  const finishedSession = await finishUserReadingSession(session.id, {
+    progressMode,
 
-        ...(progressMode === "PAGES" &&
-          endPage !== undefined && {
-            endPage,
-          }),
+    ...(progressMode === "PAGES" &&
+      endPage !== undefined && {
+        endPage,
+      }),
 
-        ...(progressMode === "PERCENT" &&
-          endPercent !== undefined && {
-            endPercent,
-          }),
+    ...(progressMode === "PERCENT" &&
+      endPercent !== undefined && {
+        endPercent,
+      }),
 
-        durationSeconds,
+    durationSeconds,
 
-        pausedSeconds:
-          totalPausedSeconds,
-      },
-    );
+    pausedSeconds: totalPausedSeconds,
+  });
 
   /* =========================
      BOOK STATUS
@@ -175,39 +126,30 @@ export const finishUserReadingService = async (
 
   const isFinished =
     progressMode === "PAGES"
-      ? book.pages !== null &&
-        endPage !== undefined &&
-        endPage >= book.pages
+      ? book.pages !== null && endPage !== undefined && endPage >= book.pages
       : endPercent === 100;
 
-  const status = isFinished
-    ? "FINISHED"
-    : "READING";
+  const status = isFinished ? "FINISHED" : "READING";
 
   /* =========================
      UPDATE USER BOOK
   ========================= */
 
-  await updateUserReadingProgress(
-    userId,
-    bookId,
-    {
-      progressMode,
+  await updateUserReadingProgress(userId, bookId, {
+    progressMode,
 
-      ...(progressMode === "PAGES" &&
-        endPage !== undefined && {
-          currentPage: endPage,
-        }),
+    ...(progressMode === "PAGES" &&
+      endPage !== undefined && {
+        currentPage: endPage,
+      }),
 
-      ...(progressMode === "PERCENT" &&
-        endPercent !== undefined && {
-          currentPercent:
-            endPercent,
-        }),
+    ...(progressMode === "PERCENT" &&
+      endPercent !== undefined && {
+        currentPercent: endPercent,
+      }),
 
-      status,
-    },
-  );
+    status,
+  });
 
   return finishedSession;
 };
