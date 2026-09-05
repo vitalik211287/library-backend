@@ -4,6 +4,13 @@ import {
   getUserReadingSessionsForStats,
 } from "../repositories/userStatsRepository.js";
 
+import {
+  calculateReadingSessionMetrics,
+  calculateReadingStreak,
+  getFinishedBooksInRange,
+  getSafeTimeZone,
+} from "./readingMetricsService.js";
+
 type GenreStat = {
   name: string;
   books: number;
@@ -21,149 +28,6 @@ type MonthStat = {
   pages: number;
   percent: number;
   seconds: number;
-};
-
-const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
-
-/* =========================
-   TIME ZONE
-========================= */
-
-const getSafeTimeZone = (timeZone?: string) => {
-  if (!timeZone) {
-    return "UTC";
-  }
-
-  try {
-    new Intl.DateTimeFormat("en-US", {
-      timeZone,
-    }).format();
-
-    return timeZone;
-  } catch {
-    return "UTC";
-  }
-};
-
-/* =========================
-   DATE HELPERS
-========================= */
-
-const getDateKey = (date: Date, timeZone: string) => {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-
-  const year = parts.find((part) => part.type === "year")?.value;
-
-  const month = parts.find((part) => part.type === "month")?.value;
-
-  const day = parts.find((part) => part.type === "day")?.value;
-
-  if (!year || !month || !day) {
-    throw new Error("Failed to format date");
-  }
-
-  return `${year}-${month}-${day}`;
-};
-
-const dateKeyToDayNumber = (dateKey: string) => {
-  const [year, month, day] = dateKey.split("-").map(Number);
-
-  if (!year || !month || !day) {
-    throw new Error("Invalid date key");
-  }
-
-  return Math.floor(Date.UTC(year, month - 1, day) / MILLISECONDS_PER_DAY);
-};
-
-const dayNumberToDateKey = (dayNumber: number) => {
-  const date = new Date(dayNumber * MILLISECONDS_PER_DAY);
-
-  const year = date.getUTCFullYear();
-
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-
-  const day = String(date.getUTCDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-};
-
-/* =========================
-   STREAK
-========================= */
-
-const calculateStreak = (dates: Date[], timeZone: string) => {
-  if (dates.length === 0) {
-    return {
-      current: 0,
-      longest: 0,
-      readToday: false,
-    };
-  }
-
-  const uniqueDates = [
-    ...new Set(dates.map((date) => getDateKey(date, timeZone))),
-  ].sort();
-
-  const dateSet = new Set(uniqueDates);
-
-  let longest = 0;
-  let running = 0;
-
-  let previousDayNumber: number | null = null;
-
-  for (const dateKey of uniqueDates) {
-    const dayNumber = dateKeyToDayNumber(dateKey);
-
-    if (previousDayNumber === null) {
-      running = 1;
-    } else if (dayNumber === previousDayNumber + 1) {
-      running += 1;
-    } else {
-      running = 1;
-    }
-
-    longest = Math.max(longest, running);
-
-    previousDayNumber = dayNumber;
-  }
-
-  const todayKey = getDateKey(new Date(), timeZone);
-
-  const todayDayNumber = dateKeyToDayNumber(todayKey);
-
-  const yesterdayKey = dayNumberToDateKey(todayDayNumber - 1);
-
-  const readToday = dateSet.has(todayKey);
-
-  let cursorDayNumber: number | null = readToday
-    ? todayDayNumber
-    : dateSet.has(yesterdayKey)
-      ? todayDayNumber - 1
-      : null;
-
-  let current = 0;
-
-  while (cursorDayNumber !== null) {
-    const cursorKey = dayNumberToDateKey(cursorDayNumber);
-
-    if (!dateSet.has(cursorKey)) {
-      break;
-    }
-
-    current += 1;
-    cursorDayNumber -= 1;
-  }
-
-  return {
-    current,
-    longest,
-    readToday,
-  };
 };
 
 /* =========================
@@ -190,48 +54,22 @@ export const getUserStatsService = async (
   ]);
 
   /* =========================
-       SUMMARY
-    ========================= */
+     SUMMARY
+  ========================= */
 
-  const pagesRead = yearSessions.reduce((total, session) => {
-    if (session.progressMode !== "PAGES" || session.endPage === null) {
-      return total;
-    }
+  const sessionMetrics = calculateReadingSessionMetrics(yearSessions);
 
-    return total + Math.max(session.endPage - session.startPage, 0);
-  }, 0);
-
-  const percentRead = yearSessions.reduce((total, session) => {
-    if (session.progressMode !== "PERCENT" || session.endPercent === null) {
-      return total;
-    }
-
-    const startPercent = session.startPercent ?? 0;
-
-    return total + Math.max(session.endPercent - startPercent, 0);
-  }, 0);
-
-  const readingSeconds = yearSessions.reduce(
-    (total, session) => total + Math.max(session.durationSeconds ?? 0, 0),
-    0,
-  );
-
-  /* =========================
-       FINISHED BOOKS
-    ========================= */
-
-  const finishedBooksInYear = finishedUserBooks.filter(
-    (item) =>
-      item.finishedAt !== null &&
-      item.finishedAt >= from &&
-      item.finishedAt < to,
+  const finishedBooksInYear = getFinishedBooksInRange(
+    finishedUserBooks,
+    from,
+    to,
   );
 
   const finishedBooks = finishedBooksInYear.length;
 
   /* =========================
-       AVERAGE RATING
-    ========================= */
+     AVERAGE RATING
+  ========================= */
 
   const ratings = finishedUserBooks
     .map((item) => item.rating)
@@ -247,8 +85,8 @@ export const getUserStatsService = async (
       : 0;
 
   /* =========================
-       MONTHS
-    ========================= */
+     MONTHS
+  ========================= */
 
   const months: MonthStat[] = Array.from(
     {
@@ -302,8 +140,8 @@ export const getUserStatsService = async (
   }
 
   /* =========================
-       GENRES
-    ========================= */
+     GENRES
+  ========================= */
 
   const genreMap = new Map<string, number>();
 
@@ -326,8 +164,8 @@ export const getUserStatsService = async (
     .sort((a, b) => b.books - a.books);
 
   /* =========================
-       AUTHORS
-    ========================= */
+     AUTHORS
+  ========================= */
 
   const authorMap = new Map<string, number>();
 
@@ -350,62 +188,40 @@ export const getUserStatsService = async (
     .slice(0, 10);
 
   /* =========================
-       STREAK
-    ========================= */
+     STREAK
+  ========================= */
 
   const activityDates = allSessions.map((session) => session.startedAt);
 
-  const streak = calculateStreak(activityDates, safeTimeZone);
+  const streak = calculateReadingStreak(activityDates, safeTimeZone);
 
   /* =========================
-       SESSION COUNT
-    ========================= */
-
-  const sessions = yearSessions.length;
-
-  const pageSessions = yearSessions.filter(
-    (session) => session.progressMode === "PAGES",
-  );
-
-  const percentSessions = yearSessions.filter(
-    (session) => session.progressMode === "PERCENT",
-  );
-
-  /* =========================
-       AVERAGES
-    ========================= */
-
-  const averageSessionSeconds =
-    sessions > 0 ? Math.round(readingSeconds / sessions) : 0;
-
-  const pageReadingSeconds = pageSessions.reduce(
-    (total, session) => total + Math.max(session.durationSeconds ?? 0, 0),
-    0,
-  );
-
-  const pagesPerHour =
-    pageReadingSeconds > 0
-      ? Math.round(pagesRead / (pageReadingSeconds / 3600))
-      : 0;
-
-  /* =========================
-       RESULT
-    ========================= */
+     RESULT
+  ========================= */
 
   return {
     year,
 
     summary: {
       finishedBooks,
-      pagesRead,
-      percentRead,
-      readingSeconds,
+
+      pagesRead: sessionMetrics.pages,
+
+      percentRead: sessionMetrics.percent,
+
+      readingSeconds: sessionMetrics.seconds,
+
       averageRating,
-      sessions,
-      pageSessions: pageSessions.length,
-      percentSessions: percentSessions.length,
-      averageSessionSeconds,
-      pagesPerHour,
+
+      sessions: sessionMetrics.sessions,
+
+      pageSessions: sessionMetrics.pageSessions,
+
+      percentSessions: sessionMetrics.percentSessions,
+
+      averageSessionSeconds: sessionMetrics.averageSessionSeconds,
+
+      pagesPerHour: sessionMetrics.pagesPerHour,
     },
 
     streak,

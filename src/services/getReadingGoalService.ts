@@ -1,7 +1,9 @@
 import {
   getReadingGoal,
-  getReadingGoalProgress,
+  getReadingGoalMetricsSource,
 } from "../repositories/readingGoalRepository.js";
+
+import { calculateReadingSessionMetrics } from "./readingMetricsService.js";
 
 const getPercent = (current: number, goal: number | null) => {
   if (!goal || goal <= 0) {
@@ -12,11 +14,19 @@ const getPercent = (current: number, goal: number | null) => {
 };
 
 export const getReadingGoalService = async (userId: string, year: number) => {
-  const [goal, progress] = await Promise.all([
+  const [goal, metricsSource] = await Promise.all([
     getReadingGoal(userId, year),
 
-    getReadingGoalProgress(userId, year),
+    getReadingGoalMetricsSource(userId, year),
   ]);
+
+  const sessionMetrics = calculateReadingSessionMetrics(metricsSource.sessions);
+
+  const books = metricsSource.finishedBooks.length;
+
+  const pages = sessionMetrics.pages;
+
+  const minutes = Math.floor(sessionMetrics.seconds / 60);
 
   const booksGoal = goal?.booksGoal ?? null;
 
@@ -34,19 +44,17 @@ export const getReadingGoalService = async (userId: string, year: number) => {
     },
 
     progress: {
-      books: progress.books,
-
-      pages: progress.pages,
-
-      minutes: progress.minutes,
+      books,
+      pages,
+      minutes,
     },
 
     percent: {
-      books: getPercent(progress.books, booksGoal),
+      books: getPercent(books, booksGoal),
 
-      pages: getPercent(progress.pages, pagesGoal),
+      pages: getPercent(pages, pagesGoal),
 
-      minutes: getPercent(progress.minutes, minutesGoal),
+      minutes: getPercent(minutes, minutesGoal),
     },
   };
 };

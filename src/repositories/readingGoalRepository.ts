@@ -40,7 +40,14 @@ export const upsertReadingGoal = async (
   });
 };
 
-export const getReadingGoalProgress = async (userId: string, year: number) => {
+/* =========================
+   GOAL METRICS SOURCE
+========================= */
+
+export const getReadingGoalMetricsSource = async (
+  userId: string,
+  year: number,
+) => {
   const from = new Date(Date.UTC(year, 0, 1));
 
   const to = new Date(Date.UTC(year + 1, 0, 1));
@@ -58,8 +65,9 @@ export const getReadingGoalProgress = async (userId: string, year: number) => {
         },
       },
 
-      include: {
-        book: true,
+      select: {
+        id: true,
+        finishedAt: true,
       },
     }),
 
@@ -79,29 +87,18 @@ export const getReadingGoalProgress = async (userId: string, year: number) => {
         startPage: true,
         endPage: true,
 
+        startPercent: true,
+        endPercent: true,
+
         durationSeconds: true,
+
+        startedAt: true,
       },
     }),
   ]);
 
-  const pages = sessions.reduce((total, session) => {
-    if (session.progressMode !== "PAGES" || session.endPage === null) {
-      return total;
-    }
-
-    return total + Math.max(session.endPage - session.startPage, 0);
-  }, 0);
-
-  const seconds = sessions.reduce(
-    (total, session) => total + Math.max(session.durationSeconds ?? 0, 0),
-    0,
-  );
-
   return {
-    books: finishedBooks.length,
-
-    pages,
-
-    minutes: Math.floor(seconds / 60),
+    finishedBooks,
+    sessions,
   };
 };

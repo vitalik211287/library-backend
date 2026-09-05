@@ -3,6 +3,11 @@ import {
   getFinishedUserBooksForStats,
 } from "../repositories/userStatsRepository.js";
 
+import {
+  calculateReadingSessionMetrics,
+  calculateReadingStreak,
+} from "./readingMetricsService.js";
+
 type AchievementCategory = "books" | "pages" | "time" | "streak";
 
 type AchievementConfig = {
@@ -18,8 +23,6 @@ type Achievement = AchievementConfig & {
   percent: number;
   unlocked: boolean;
 };
-
-const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const ACHIEVEMENTS: AchievementConfig[] = [
   {
@@ -111,49 +114,6 @@ const ACHIEVEMENTS: AchievementConfig[] = [
   },
 ];
 
-const calculateLongestStreak = (dates: Date[]) => {
-  if (dates.length === 0) {
-    return 0;
-  }
-
-  const uniqueDays = [
-    ...new Set(
-      dates.map((date) =>
-        Math.floor(
-          Date.UTC(
-            date.getUTCFullYear(),
-            date.getUTCMonth(),
-            date.getUTCDate(),
-          ) / MILLISECONDS_PER_DAY,
-        ),
-      ),
-    ),
-  ].sort((a, b) => a - b);
-
-  let longest = 1;
-  let current = 1;
-
-  for (let index = 1; index < uniqueDays.length; index += 1) {
-    const previousDay = uniqueDays[index - 1];
-
-    const currentDay = uniqueDays[index];
-
-    if (previousDay === undefined || currentDay === undefined) {
-      continue;
-    }
-
-    if (currentDay === previousDay + 1) {
-      current += 1;
-    } else {
-      current = 1;
-    }
-
-    longest = Math.max(longest, current);
-  }
-
-  return longest;
-};
-
 const getAchievementCurrentValue = (
   category: AchievementCategory,
   data: {
@@ -188,34 +148,34 @@ export const getUserAchievementsService = async (userId: string) => {
     getFinishedUserBooksForStats(userId),
   ]);
 
-  const totalBooks = finishedBooks.length;
+  /* =========================
+       CANONICAL METRICS
+    ========================= */
 
-  const totalPages = sessions.reduce((total, session) => {
-    if (session.progressMode !== "PAGES" || session.endPage === null) {
-      return total;
-    }
+  const sessionMetrics = calculateReadingSessionMetrics(sessions);
 
-    return total + Math.max(session.endPage - session.startPage, 0);
-  }, 0);
-
-  const totalSeconds = sessions.reduce(
-    (total, session) => total + Math.max(session.durationSeconds ?? 0, 0),
-    0,
-  );
-
-  const longestStreak = calculateLongestStreak(
+  const streakMetrics = calculateReadingStreak(
     sessions.map((session) => session.startedAt),
+
+    // Старий Achievements рахував
+    // календарні дні по UTC.
+    // Зберігаємо ту саму поведінку.
+    "UTC",
   );
 
   const values = {
-    books: totalBooks,
+    books: finishedBooks.length,
 
-    pages: totalPages,
+    pages: sessionMetrics.pages,
 
-    seconds: totalSeconds,
+    seconds: sessionMetrics.seconds,
 
-    streak: longestStreak,
+    streak: streakMetrics.longest,
   };
+
+  /* =========================
+       ACHIEVEMENTS
+    ========================= */
 
   const achievements: Achievement[] = ACHIEVEMENTS.map((achievement) => {
     const current = getAchievementCurrentValue(achievement.category, values);
