@@ -1,13 +1,9 @@
-import { addBook } from "../repositories/addBook.js";
-import prisma from "../utils/prisma.js";
 import type { Prisma } from "@prisma/client";
 
+import { createBook, getBookByIsbn } from "../repositories/booksRepository.js";
+
 export const addBookService = async (data: Prisma.BookCreateInput) => {
-  const existingBook = await prisma.book.findUnique({
-    where: {
-      isbn: data.isbn,
-    },
-  });
+  const existingBook = await getBookByIsbn(data.isbn);
 
   if (existingBook) {
     const error = new Error("Book already exists") as Error & {
@@ -19,5 +15,5 @@ export const addBookService = async (data: Prisma.BookCreateInput) => {
     throw error;
   }
 
-  return addBook(data);
+  return createBook(data);
 };

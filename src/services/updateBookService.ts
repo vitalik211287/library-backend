@@ -1,5 +1,6 @@
-import { updateBook } from "../repositories/updateBook.js";
 import type { Prisma } from "@prisma/client";
+
+import { updateBook } from "../repositories/booksRepository.js";
 
 export const updateBookService = async (
   id: string,
