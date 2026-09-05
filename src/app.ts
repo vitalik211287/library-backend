@@ -1,11 +1,11 @@
 import express from "express";
 import cors from "cors";
-import readingRouter from "./routes/readingRoutes.js";
-import booksRouter from "./routes/booksRoutes.js";
-import authRouter from "./routes/authRoutes.js";
-import userBooksRouter from "./routes/userBooksRoutes.js";
-import usersRouter from "./routes/usersRoutes.js";
-import librariesRouter from "./routes/librariesRoutes.js";
+import readingRouter from "./modules/reading/readingRoutes.js";
+import booksRouter from "./modules/books/booksRoutes.js";
+import authRouter from "./modules/auth/authRoutes.js";
+import userBooksRouter from "./modules/user-books/routes/userBooksRoutes.js";
+import usersRouter from "./modules/users/usersRoutes.js";
+import librariesRouter from "./modules/libraries/librariesRoutes.js";
 
 const app = express();
 
@@ -34,3 +34,4 @@ app.use("/api/users", usersRouter);
 app.use("/api/libraries", librariesRouter);
 
 export default app;
+
