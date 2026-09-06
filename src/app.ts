@@ -6,6 +6,7 @@ import authRouter from "./modules/auth/authRoutes.js";
 import userBooksRouter from "./modules/user-books/routes/userBooksRoutes.js";
 import usersRouter from "./modules/users/usersRoutes.js";
 import librariesRouter from "./modules/libraries/librariesRoutes.js";
+import adminRouter from "./modules/admin/adminRoutes.js";
 
 const app = express();
 
@@ -32,6 +33,8 @@ app.use("/api/reading", readingRouter);
 app.use("/api/users", usersRouter);
 
 app.use("/api/libraries", librariesRouter);
+
+app.use("/api/admin", adminRouter);
 
 export default app;
 

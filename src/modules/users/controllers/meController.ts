@@ -35,6 +35,8 @@ export const meController = async (
         name: user.name,
         email: user.email,
         avatarUrl: user.avatarUrl,
+        role: user.role,
+        isBlocked: user.isBlocked,
       },
     });
   } catch (error) {

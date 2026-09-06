@@ -6,11 +6,13 @@ import type {
 
 import jwt from "jsonwebtoken";
 
+import { getUserById } from "../modules/users/repositories/usersRepository.js";
+
 type JwtPayload = {
   userId: string;
 };
 
-export const authMiddleware = (
+export const authMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -51,7 +53,27 @@ export const authMiddleware = (
       jwtSecret,
     ) as JwtPayload;
 
-    req.userId = payload.userId;
+    const user = await getUserById(
+      payload.userId,
+    );
+
+    if (!user) {
+      res.status(401).json({
+        message: "Unauthorized",
+      });
+
+      return;
+    }
+
+    if (user.isBlocked) {
+      res.status(403).json({
+        message: "Account is blocked",
+      });
+
+      return;
+    }
+
+    req.userId = user.id;
 
     next();
   } catch {
