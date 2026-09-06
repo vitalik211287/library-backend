@@ -117,6 +117,33 @@ export const finishUserReadingSession = async (
   });
 };
 
+export const getAllFinishedUserReadingSessions = async (userId: string) => {
+  return prisma.readingSession.findMany({
+    where: {
+      userId,
+      finishedAt: {
+        not: null,
+      },
+    },
+
+    include: {
+      book: {
+        select: {
+          id: true,
+          title: true,
+          author: true,
+          coverUrl: true,
+          pages: true,
+        },
+      },
+    },
+
+    orderBy: {
+      startedAt: "desc",
+    },
+  });
+};
+
 export const getFinishedUserReadingSessions = async (
   userId: string,
   bookId: string,
@@ -232,4 +259,3 @@ export const createImportedReadingSession = async (
     },
   });
 };
-

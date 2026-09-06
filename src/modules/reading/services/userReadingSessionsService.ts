@@ -7,6 +7,7 @@ import {
 
 import {
   deleteUserReadingSession,
+  getAllFinishedUserReadingSessions,
   getFinishedUserReadingSessions,
   getLatestFinishedUserReadingSession,
   getUserReadingSessionById,
@@ -16,6 +17,10 @@ import {
 type UpdateReadingSessionData = {
   endPage?: number;
   endPercent?: number;
+};
+
+export const getAllUserReadingSessionsService = async (userId: string) => {
+  return getAllFinishedUserReadingSessions(userId);
 };
 
 export const getUserReadingSessionsService = async (
@@ -225,5 +230,3 @@ export const deleteUserReadingSessionService = async (
     deletedSessionId: session.id,
   };
 };
-
-

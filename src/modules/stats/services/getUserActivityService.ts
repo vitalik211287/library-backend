@@ -1,4 +1,6 @@
-import { getUserReadingSessionsForMonth } from "../repositories/userStatsRepository.js";
+﻿import { getUserReadingSessionsForMonth } from "../repositories/userStatsRepository.js";
+
+import { calculateReadingSessionMetrics } from "./readingMetricsService.js";
 
 type DayActivity = {
   day: number;
@@ -38,8 +40,12 @@ export const getUserActivityService = async (
     }),
   );
 
-  for (const session of sessions) {
-    const day = session.startedAt.getUTCDate();
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const daySessions = sessions.filter(
+      (session) => session.startedAt.getUTCDate() === day,
+    );
+
+    const metrics = calculateReadingSessionMetrics(daySessions);
 
     const dayActivity = days[day - 1];
 
@@ -47,19 +53,10 @@ export const getUserActivityService = async (
       continue;
     }
 
-    dayActivity.sessions += 1;
-
-    dayActivity.seconds += Math.max(session.durationSeconds ?? 0, 0);
-
-    if (session.progressMode === "PAGES" && session.endPage !== null) {
-      dayActivity.pages += Math.max(session.endPage - session.startPage, 0);
-    }
-
-    if (session.progressMode === "PERCENT" && session.endPercent !== null) {
-      const startPercent = session.startPercent ?? 0;
-
-      dayActivity.percent += Math.max(session.endPercent - startPercent, 0);
-    }
+    dayActivity.sessions = metrics.sessions;
+    dayActivity.seconds = metrics.seconds;
+    dayActivity.pages = metrics.pages;
+    dayActivity.percent = metrics.percent;
   }
 
   return {
@@ -68,4 +65,3 @@ export const getUserActivityService = async (
     days,
   };
 };
-

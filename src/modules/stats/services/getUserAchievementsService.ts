@@ -6,6 +6,7 @@ import {
 import {
   calculateReadingSessionMetrics,
   calculateReadingStreak,
+  getSafeTimeZone,
 } from "./readingMetricsService.js";
 
 type AchievementCategory = "books" | "pages" | "time" | "streak";
@@ -141,7 +142,11 @@ const getAchievementCurrentValue = (
   }
 };
 
-export const getUserAchievementsService = async (userId: string) => {
+export const getUserAchievementsService = async (
+  userId: string,
+  timeZone?: string,
+) => {
+  const safeTimeZone = getSafeTimeZone(timeZone);
   const [sessions, finishedBooks] = await Promise.all([
     getAllUserReadingSessionsForStats(userId),
 
@@ -156,11 +161,7 @@ export const getUserAchievementsService = async (userId: string) => {
 
   const streakMetrics = calculateReadingStreak(
     sessions.map((session) => session.startedAt),
-
-    // Старий Achievements рахував
-    // календарні дні по UTC.
-    // Зберігаємо ту саму поведінку.
-    "UTC",
+    safeTimeZone,
   );
 
   const values = {
@@ -170,7 +171,7 @@ export const getUserAchievementsService = async (userId: string) => {
 
     seconds: sessionMetrics.seconds,
 
-    streak: streakMetrics.longest,
+    streak: streakMetrics.current,
   };
 
   /* =========================
@@ -212,4 +213,3 @@ export const getUserAchievementsService = async (userId: string) => {
     achievements,
   };
 };
-

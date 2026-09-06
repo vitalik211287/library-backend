@@ -14,6 +14,7 @@ import { resumeUserReadingController } from "../../reading/controllers/resumeUse
 import { importUserReadingController } from "../../reading/controllers/importUserReadingController.js";
 
 import { getUserReadingSessionsController } from "../../reading/controllers/getUserReadingSessionsController.js";
+import { getAllUserReadingSessionsController } from "../../reading/controllers/getAllUserReadingSessionsController.js";
 import { updateUserReadingSessionController } from "../../reading/controllers/updateUserReadingSessionController.js";
 import { deleteUserReadingSessionController } from "../../reading/controllers/deleteUserReadingSessionController.js";
 
@@ -55,6 +56,8 @@ userBooksRouter.get("/goals", getReadingGoalController);
 userBooksRouter.put("/goals", updateReadingGoalController);
 
 userBooksRouter.get("/achievements", getUserAchievementsController);
+
+userBooksRouter.get("/reading/sessions", getAllUserReadingSessionsController);
 
 /* =========================
    SINGLE BOOK
@@ -113,5 +116,3 @@ userBooksRouter.delete(
 );
 
 export default userBooksRouter;
-
-
