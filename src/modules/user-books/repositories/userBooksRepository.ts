@@ -8,6 +8,7 @@ type UpdateUserBookData = {
   currentPercent?: number;
   status?: ReadingStatus;
   rating?: number | null;
+  isWishlist?: boolean;
 };
 
 type UpdateReadingProgressData = {
@@ -110,6 +111,10 @@ export const updateUserBook = async (
         rating: data.rating,
       }),
 
+      ...(data.isWishlist !== undefined && {
+        isWishlist: data.isWishlist,
+      }),
+
       ...(finishedAt !== undefined && {
         finishedAt,
       }),
@@ -137,6 +142,10 @@ export const updateUserBook = async (
 
       ...(data.rating !== undefined && {
         rating: data.rating,
+      }),
+
+      ...(data.isWishlist !== undefined && {
+        isWishlist: data.isWishlist,
       }),
 
       ...(finishedAt !== undefined && {
