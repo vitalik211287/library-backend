@@ -42,30 +42,12 @@ export const getAdminUserById = async (userId: string) => {
       updatedAt: true,
 
       books: {
-        select: {
-          id: true,
-          status: true,
-          currentPage: true,
-          currentPercent: true,
-          progressMode: true,
-          rating: true,
-          isWishlist: true,
-          finishedAt: true,
-          createdAt: true,
-          updatedAt: true,
-          book: {
-            select: {
-              id: true,
-              isbn: true,
-              title: true,
-              author: true,
-              coverUrl: true,
-              pages: true,
-            },
-          },
+        include: {
+          book: true,
         },
+
         orderBy: {
-          updatedAt: 'desc',
+          updatedAt: "desc",
         },
       },
 
