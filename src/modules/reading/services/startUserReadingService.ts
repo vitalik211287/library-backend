@@ -1,10 +1,8 @@
 import type { ProgressMode } from "@prisma/client";
 import { getBookById } from "../../books/repositories/booksRepository.js";
 
-import {
-  getOrCreateUserBook,
-  updateUserReadingProgress,
-} from "../../user-books/repositories/userBooksRepository.js";
+import { getOrCreateUserBook } from "../../user-books/repositories/userBooksRepository.js";
+import { updateUserBookService } from "../../user-books/services/updateUserBookService.js";
 
 import {
   createUserReadingSession,
@@ -75,7 +73,7 @@ export const startUserReadingService = async (
     startPercent,
   });
 
-  await updateUserReadingProgress(userId, bookId, {
+  await updateUserBookService(userId, bookId, {
     progressMode,
 
     ...(progressMode === "PAGES" && {

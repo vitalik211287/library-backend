@@ -1,4 +1,4 @@
-import { updateUserReadingProgress } from "../../user-books/repositories/userBooksRepository.js";
+import { updateUserBookService } from "../../user-books/services/updateUserBookService.js";
 
 import {
   getActiveUserReadingSession,
@@ -25,7 +25,7 @@ export const resumeUserReadingService = async (
     session.pausedSeconds,
   );
 
-  await updateUserReadingProgress(userId, bookId, {
+  await updateUserBookService(userId, bookId, {
     progressMode: session.progressMode,
     status: "READING",
   });

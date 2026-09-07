@@ -156,51 +156,6 @@ export const updateUserBook = async (
   });
 };
 
-export const updateUserReadingProgress = async (
-  userId: string,
-  bookId: string,
-  data: UpdateReadingProgressData,
-) => {
-  const userBook = await prisma.userBook.findUnique({
-    where: {
-      userId_bookId: {
-        userId,
-        bookId,
-      },
-    },
-  });
-
-  const finishedAt =
-    data.status === "FINISHED" ? (userBook?.finishedAt ?? new Date()) : null;
-
-  return prisma.userBook.update({
-    where: {
-      userId_bookId: {
-        userId,
-        bookId,
-      },
-    },
-
-    data: {
-      ...(data.progressMode !== undefined && {
-        progressMode: data.progressMode,
-      }),
-
-      ...(data.currentPage !== undefined && {
-        currentPage: data.currentPage,
-      }),
-
-      ...(data.currentPercent !== undefined && {
-        currentPercent: data.currentPercent,
-      }),
-
-      status: data.status,
-      isWishlist: false,
-      finishedAt,
-    },
-  });
-};
-
 export const updateUserBookProgressOnly = async (
   userId: string,
   bookId: string,

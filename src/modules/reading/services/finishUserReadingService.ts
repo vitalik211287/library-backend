@@ -1,6 +1,6 @@
 import { getBookById } from "../../books/repositories/booksRepository.js";
 
-import { updateUserReadingProgress } from "../../user-books/repositories/userBooksRepository.js";
+import { updateUserBookService } from "../../user-books/services/updateUserBookService.js";
 
 import {
   finishUserReadingSession,
@@ -135,7 +135,7 @@ export const finishUserReadingService = async (
      UPDATE USER BOOK
   ========================= */
 
-  await updateUserReadingProgress(userId, bookId, {
+  await updateUserBookService(userId, bookId, {
     progressMode,
 
     ...(progressMode === "PAGES" &&
