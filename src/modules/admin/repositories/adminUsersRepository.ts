@@ -68,6 +68,27 @@ export const getAdminUserById = async (userId: string) => {
           updatedAt: 'desc',
         },
       },
+
+      readingSessions: {
+        select: {
+          id: true,
+          bookId: true,
+          progressMode: true,
+          startedAt: true,
+          finishedAt: true,
+          startPage: true,
+          endPage: true,
+          startPercent: true,
+          endPercent: true,
+          durationSeconds: true,
+          pausedAt: true,
+          pausedSeconds: true,
+          createdAt: true,
+        },
+        orderBy: {
+          startedAt: "desc",
+        },
+      },
     },
   });
 };
