@@ -49,6 +49,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   libraryMemberships LibraryMember[]
+  activityLogs       ActivityLog[]
 }
 
 model Follow {
@@ -86,7 +87,8 @@ model Book {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  libraries LibraryBook[]
+  libraries    LibraryBook[]
+  activityLogs ActivityLog[]
 }
 
 model UserBook {
@@ -218,4 +220,32 @@ model LibraryBook {
   @@unique([libraryId, bookId])
   @@index([libraryId])
   @@index([bookId])
+}
+
+enum ActivityType {
+  STATUS_CHANGED
+  PROGRESS_CHANGED
+  PROGRESS_RESET
+  RATING_CHANGED
+  WISHLIST_CHANGED
+}
+
+model ActivityLog {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  bookId String?
+  book   Book?   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  type ActivityType
+
+  oldValue String?
+  newValue String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([bookId, createdAt])
 }

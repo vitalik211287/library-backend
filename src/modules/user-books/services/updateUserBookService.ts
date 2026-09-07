@@ -1,4 +1,6 @@
-import type { ProgressMode, ReadingStatus } from "@prisma/client";
+﻿import type { ProgressMode, ReadingStatus } from "@prisma/client";
+
+import prisma from "../../../utils/prisma.js";
 
 import {
   getUserBook,
@@ -84,6 +86,75 @@ export const updateUserBookService = async (
     }
   }
 
-  return updateUserBook(userId, bookId, updateData);
-};
+  const updatedUserBook = await updateUserBook(
+    userId,
+    bookId,
+    updateData,
+  );
 
+  const activities = [];
+
+  if (
+    data.status !== undefined &&
+    data.status !== userBook?.status
+  ) {
+    activities.push({
+      userId,
+      bookId,
+      type: "STATUS_CHANGED" as const,
+      oldValue: userBook?.status ?? null,
+      newValue: data.status,
+    });
+  }
+
+  const oldProgress =
+    progressMode === "PERCENT"
+      ? userBook?.currentPercent ?? 0
+      : userBook?.currentPage ?? 0;
+
+  const newProgress =
+    progressMode === "PERCENT"
+      ? updateData.currentPercent ?? oldProgress
+      : updateData.currentPage ?? oldProgress;
+
+  if (oldProgress !== newProgress) {
+    activities.push({
+      userId,
+      bookId,
+      type:
+        newProgress === 0 && oldProgress > 0
+          ? ("PROGRESS_RESET" as const)
+          : ("PROGRESS_CHANGED" as const),
+      oldValue: String(oldProgress),
+      newValue: String(newProgress),
+    });
+  }
+
+  if (
+    data.rating !== undefined &&
+    data.rating !== userBook?.rating
+  ) {
+    activities.push({
+      userId,
+      bookId,
+      type: "RATING_CHANGED" as const,
+      oldValue:
+        userBook?.rating === null ||
+        userBook?.rating === undefined
+          ? null
+          : String(userBook.rating),
+      newValue:
+        data.rating === null
+          ? null
+          : String(data.rating),
+    });
+  }
+
+  if (activities.length > 0) {
+    await prisma.activityLog.createMany({
+      data: activities,
+    });
+  }
+
+  return updatedUserBook;
+};

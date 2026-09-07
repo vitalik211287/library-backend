@@ -69,6 +69,27 @@ export const getAdminUserById = async (userId: string) => {
         },
       },
 
+      activityLogs: {
+        select: {
+          id: true,
+          bookId: true,
+          type: true,
+          oldValue: true,
+          newValue: true,
+          createdAt: true,
+          book: {
+            select: {
+              id: true,
+              title: true,
+              author: true,
+              coverUrl: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
       readingSessions: {
         select: {
           id: true,
