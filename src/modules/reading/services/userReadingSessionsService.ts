@@ -1,9 +1,7 @@
 import { getBookById } from "../../books/repositories/booksRepository.js";
 
-import {
-  getUserBook,
-  updateUserBookProgressOnly,
-} from "../../user-books/repositories/userBooksRepository.js";
+import { getUserBook } from "../../user-books/repositories/userBooksRepository.js";
+import { updateUserBookService } from "../../user-books/services/updateUserBookService.js";
 
 import {
   deleteUserReadingSession,
@@ -100,7 +98,7 @@ export const updateUserReadingSessionService = async (
       userBook.currentPage === previousEndPage;
 
     if (isLatestSession && userBookPointsToSession) {
-      await updateUserBookProgressOnly(userId, bookId, {
+      await updateUserBookService(userId, bookId, {
         progressMode: "PAGES",
         currentPage: data.endPage,
       });
@@ -137,7 +135,7 @@ export const updateUserReadingSessionService = async (
     userBook.currentPercent === previousEndPercent;
 
   if (isLatestSession && userBookPointsToSession) {
-    await updateUserBookProgressOnly(userId, bookId, {
+    await updateUserBookService(userId, bookId, {
       progressMode: "PERCENT",
       currentPercent: data.endPercent,
     });
@@ -195,13 +193,13 @@ export const deleteUserReadingSessionService = async (
 
     if (latestAfterDelete) {
       if (latestAfterDelete.progressMode === "PAGES") {
-        await updateUserBookProgressOnly(userId, bookId, {
+        await updateUserBookService(userId, bookId, {
           progressMode: "PAGES",
 
           currentPage: latestAfterDelete.endPage ?? latestAfterDelete.startPage,
         });
       } else {
-        await updateUserBookProgressOnly(userId, bookId, {
+        await updateUserBookService(userId, bookId, {
           progressMode: "PERCENT",
 
           currentPercent:
@@ -210,13 +208,13 @@ export const deleteUserReadingSessionService = async (
       }
     } else {
       if (session.progressMode === "PAGES") {
-        await updateUserBookProgressOnly(userId, bookId, {
+        await updateUserBookService(userId, bookId, {
           progressMode: "PAGES",
 
           currentPage: session.startPage,
         });
       } else {
-        await updateUserBookProgressOnly(userId, bookId, {
+        await updateUserBookService(userId, bookId, {
           progressMode: "PERCENT",
 
           currentPercent: session.startPercent ?? 0,

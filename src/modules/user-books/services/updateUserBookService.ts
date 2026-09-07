@@ -1,4 +1,4 @@
-﻿import type { ProgressMode, ReadingStatus } from "@prisma/client";
+import type { ProgressMode, ReadingStatus } from "@prisma/client";
 
 import prisma from "../../../utils/prisma.js";
 
@@ -13,6 +13,7 @@ type UpdateUserBookData = {
   currentPercent?: number;
   status?: ReadingStatus;
   rating?: number | null;
+  isWishlist?: boolean;
 };
 
 export const updateUserBookService = async (
@@ -62,6 +63,10 @@ export const updateUserBookService = async (
     progressMode,
   };
 
+  if (data.status !== undefined) {
+    updateData.isWishlist = false;
+  }
+
   if (data.status === "FINISHED") {
     if (progressMode === "PERCENT") {
       updateData.currentPercent = 100;
@@ -86,18 +91,11 @@ export const updateUserBookService = async (
     }
   }
 
-  const updatedUserBook = await updateUserBook(
-    userId,
-    bookId,
-    updateData,
-  );
+  const updatedUserBook = await updateUserBook(userId, bookId, updateData);
 
   const activities = [];
 
-  if (
-    data.status !== undefined &&
-    data.status !== userBook?.status
-  ) {
+  if (data.status !== undefined && data.status !== userBook?.status) {
     activities.push({
       userId,
       bookId,
@@ -109,13 +107,13 @@ export const updateUserBookService = async (
 
   const oldProgress =
     progressMode === "PERCENT"
-      ? userBook?.currentPercent ?? 0
-      : userBook?.currentPage ?? 0;
+      ? (userBook?.currentPercent ?? 0)
+      : (userBook?.currentPage ?? 0);
 
   const newProgress =
     progressMode === "PERCENT"
-      ? updateData.currentPercent ?? oldProgress
-      : updateData.currentPage ?? oldProgress;
+      ? (updateData.currentPercent ?? oldProgress)
+      : (updateData.currentPage ?? oldProgress);
 
   if (oldProgress !== newProgress) {
     activities.push({
@@ -130,23 +128,29 @@ export const updateUserBookService = async (
     });
   }
 
-  if (
-    data.rating !== undefined &&
-    data.rating !== userBook?.rating
-  ) {
+  if (data.rating !== undefined && data.rating !== userBook?.rating) {
     activities.push({
       userId,
       bookId,
       type: "RATING_CHANGED" as const,
       oldValue:
-        userBook?.rating === null ||
-        userBook?.rating === undefined
+        userBook?.rating === null || userBook?.rating === undefined
           ? null
           : String(userBook.rating),
-      newValue:
-        data.rating === null
-          ? null
-          : String(data.rating),
+      newValue: data.rating === null ? null : String(data.rating),
+    });
+  }
+
+  const oldWishlist = userBook?.isWishlist ?? false;
+  const newWishlist = updateData.isWishlist ?? oldWishlist;
+
+  if (oldWishlist !== newWishlist) {
+    activities.push({
+      userId,
+      bookId,
+      type: "WISHLIST_CHANGED" as const,
+      oldValue: String(oldWishlist),
+      newValue: String(newWishlist),
     });
   }
 

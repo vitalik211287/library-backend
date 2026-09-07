@@ -17,12 +17,6 @@ type UpdateReadingProgressData = {
   status: ReadingStatus;
 };
 
-type UpdateUserBookProgressOnlyData = {
-  progressMode: ProgressMode;
-  currentPage?: number;
-  currentPercent?: number;
-};
-
 export const getUserBook = async (userId: string, bookId: string) => {
   return prisma.userBook.findUnique({
     where: {
@@ -156,32 +150,6 @@ export const updateUserBook = async (
   });
 };
 
-export const updateUserBookProgressOnly = async (
-  userId: string,
-  bookId: string,
-  data: UpdateUserBookProgressOnlyData,
-) => {
-  return prisma.userBook.update({
-    where: {
-      userId_bookId: {
-        userId,
-        bookId,
-      },
-    },
-
-    data: {
-      progressMode: data.progressMode,
-
-      ...(data.currentPage !== undefined && {
-        currentPage: data.currentPage,
-      }),
-
-      ...(data.currentPercent !== undefined && {
-        currentPercent: data.currentPercent,
-      }),
-    },
-  });
-};
 
 export const getFinishedUserBooks = async (
   userId: string,
@@ -245,52 +213,7 @@ export const getWishlistUserBooks = async (userId: string) => {
   });
 };
 
-export const addUserBookToWishlist = async (userId: string, bookId: string) => {
-  return prisma.userBook.upsert({
-    where: {
-      userId_bookId: {
-        userId,
-        bookId,
-      },
-    },
 
-    update: {
-      isWishlist: true,
-    },
-
-    create: {
-      userId,
-      bookId,
-      isWishlist: true,
-    },
-
-    include: {
-      book: true,
-    },
-  });
-};
-
-export const removeUserBookFromWishlist = async (
-  userId: string,
-  bookId: string,
-) => {
-  return prisma.userBook.update({
-    where: {
-      userId_bookId: {
-        userId,
-        bookId,
-      },
-    },
-
-    data: {
-      isWishlist: false,
-    },
-
-    include: {
-      book: true,
-    },
-  });
-};
 
 export const getCurrentUserBooks = async (userId: string) => {
   return prisma.userBook.findMany({

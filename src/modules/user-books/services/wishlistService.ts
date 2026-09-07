@@ -1,12 +1,9 @@
 import { getBookById } from "../../books/repositories/booksRepository.js";
 
-import {
-  addUserBookToWishlist,
-  getWishlistUserBooks,
-  removeUserBookFromWishlist,
-} from "../repositories/userBooksRepository.js";
+import { getWishlistUserBooks } from "../repositories/userBooksRepository.js";
 
 import { getEffectiveUserBooksService } from "./effectiveUserBooksService.js";
+import { updateUserBookService } from "./updateUserBookService.js";
 
 export const getWishlistService = async (
   userId: string,
@@ -33,7 +30,7 @@ export const addToWishlistService = async (userId: string, bookId: string) => {
     throw new Error("BOOK_NOT_FOUND");
   }
 
-  return addUserBookToWishlist(userId, bookId);
+  return updateUserBookService(userId, bookId, { isWishlist: true });
 };
 
 export const removeFromWishlistService = async (
@@ -46,6 +43,6 @@ export const removeFromWishlistService = async (
     throw new Error("BOOK_NOT_FOUND");
   }
 
-  return removeUserBookFromWishlist(userId, bookId);
+  return updateUserBookService(userId, bookId, { isWishlist: false });
 };
 
