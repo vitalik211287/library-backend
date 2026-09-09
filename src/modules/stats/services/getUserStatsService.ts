@@ -86,7 +86,7 @@ export const getUserStatsService = async (
      AVERAGE RATING
   ========================= */
 
-  const ratings = finishedUserBooks
+  const ratings = finishedBooksInYear
     .map((item) => item.rating)
     .filter((rating): rating is number => typeof rating === "number");
 
@@ -172,13 +172,13 @@ export const getUserStatsService = async (
 
   const genreMap = new Map<string, number>();
 
-  for (const item of finishedUserBooks) {
+  for (const item of finishedBooksInYear) {
     const genre = item.book.genre?.trim() || "Без жанру";
 
     genreMap.set(genre, (genreMap.get(genre) ?? 0) + 1);
   }
 
-  const totalGenreBooks = finishedUserBooks.length;
+  const totalGenreBooks = finishedBooksInYear.length;
 
   const genres: GenreStat[] = Array.from(genreMap.entries())
     .map(([name, books]) => ({
@@ -196,7 +196,7 @@ export const getUserStatsService = async (
 
   const authorMap = new Map<string, number>();
 
-  for (const item of finishedUserBooks) {
+  for (const item of finishedBooksInYear) {
     const author = item.book.author?.trim();
 
     if (!author) {
@@ -260,4 +260,3 @@ export const getUserStatsService = async (
     months,
   };
 };
-
