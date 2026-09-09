@@ -44,6 +44,8 @@ export const loginService = async ({ email, password }: LoginData) => {
       name: user.name,
       email: user.email,
       avatarUrl: user.avatarUrl,
+      role: user.role,
+      isBlocked: user.isBlocked,
     },
 
     token,
