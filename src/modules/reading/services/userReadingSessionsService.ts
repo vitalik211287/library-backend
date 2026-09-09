@@ -1,3 +1,5 @@
+import prisma from "../../../utils/prisma.js";
+
 import { getBookById } from "../../books/repositories/booksRepository.js";
 
 import { getUserBook } from "../../user-books/repositories/userBooksRepository.js";
@@ -88,9 +90,16 @@ export const updateUserReadingSessionService = async (
       throw new Error("End page cannot be greater than total book pages");
     }
 
-    const updatedSession = await updateUserReadingSessionProgress(session.id, {
-      endPage: data.endPage,
-    });
+    const endPage = data.endPage;
+
+    const updatedSession = await prisma.$transaction(async (tx) => {
+      const updatedSession = await updateUserReadingSessionProgress(
+        session.id,
+        {
+          endPage,
+        },
+        tx,
+      );
 
     const userBookPointsToSession =
       previousEndPage !== null &&
@@ -98,11 +107,19 @@ export const updateUserReadingSessionService = async (
       userBook.currentPage === previousEndPage;
 
     if (isLatestSession && userBookPointsToSession) {
-      await updateUserBookService(userId, bookId, {
-        progressMode: "PAGES",
-        currentPage: data.endPage,
-      });
+      await updateUserBookService(
+        userId,
+        bookId,
+        {
+          progressMode: "PAGES",
+          currentPage: endPage,
+        },
+        tx,
+      );
     }
+
+      return updatedSession;
+    });
 
     return updatedSession;
   }
@@ -125,21 +142,36 @@ export const updateUserReadingSessionService = async (
     throw new Error("End percent cannot be less than start percent");
   }
 
-  const updatedSession = await updateUserReadingSessionProgress(session.id, {
-    endPercent: data.endPercent,
+  const endPercent = data.endPercent;
+
+  const updatedSession = await prisma.$transaction(async (tx) => {
+    const updatedSession = await updateUserReadingSessionProgress(
+      session.id,
+      {
+        endPercent,
+      },
+      tx,
+    );
+
+    const userBookPointsToSession =
+      previousEndPercent !== null &&
+      userBook.progressMode === "PERCENT" &&
+      userBook.currentPercent === previousEndPercent;
+
+    if (isLatestSession && userBookPointsToSession) {
+      await updateUserBookService(
+        userId,
+        bookId,
+        {
+          progressMode: "PERCENT",
+          currentPercent: endPercent,
+        },
+        tx,
+      );
+    }
+
+    return updatedSession;
   });
-
-  const userBookPointsToSession =
-    previousEndPercent !== null &&
-    userBook.progressMode === "PERCENT" &&
-    userBook.currentPercent === previousEndPercent;
-
-  if (isLatestSession && userBookPointsToSession) {
-    await updateUserBookService(userId, bookId, {
-      progressMode: "PERCENT",
-      currentPercent: data.endPercent,
-    });
-  }
 
   return updatedSession;
 };
@@ -183,45 +215,67 @@ export const deleteUserReadingSessionService = async (
         userBook.progressMode === "PERCENT" &&
         userBook.currentPercent === session.endPercent;
 
-  await deleteUserReadingSession(session.id);
+  await prisma.$transaction(async (tx) => {
+    await deleteUserReadingSession(session.id, tx);
 
-  if (wasLatestSession && userBookPointsToDeletedSession) {
-    const latestAfterDelete = await getLatestFinishedUserReadingSession(
-      userId,
-      bookId,
-    );
+    if (wasLatestSession && userBookPointsToDeletedSession) {
+      const latestAfterDelete = await getLatestFinishedUserReadingSession(
+        userId,
+        bookId,
+        tx,
+      );
 
-    if (latestAfterDelete) {
-      if (latestAfterDelete.progressMode === "PAGES") {
-        await updateUserBookService(userId, bookId, {
-          progressMode: "PAGES",
-
-          currentPage: latestAfterDelete.endPage ?? latestAfterDelete.startPage,
-        });
+      if (latestAfterDelete) {
+        if (latestAfterDelete.progressMode === "PAGES") {
+          await updateUserBookService(
+            userId,
+            bookId,
+            {
+              progressMode: "PAGES",
+              currentPage:
+                latestAfterDelete.endPage ?? latestAfterDelete.startPage,
+            },
+            tx,
+          );
+        } else {
+          await updateUserBookService(
+            userId,
+            bookId,
+            {
+              progressMode: "PERCENT",
+              currentPercent:
+                latestAfterDelete.endPercent ??
+                latestAfterDelete.startPercent ??
+                0,
+            },
+            tx,
+          );
+        }
       } else {
-        await updateUserBookService(userId, bookId, {
-          progressMode: "PERCENT",
-
-          currentPercent:
-            latestAfterDelete.endPercent ?? latestAfterDelete.startPercent ?? 0,
-        });
-      }
-    } else {
-      if (session.progressMode === "PAGES") {
-        await updateUserBookService(userId, bookId, {
-          progressMode: "PAGES",
-
-          currentPage: session.startPage,
-        });
-      } else {
-        await updateUserBookService(userId, bookId, {
-          progressMode: "PERCENT",
-
-          currentPercent: session.startPercent ?? 0,
-        });
+        if (session.progressMode === "PAGES") {
+          await updateUserBookService(
+            userId,
+            bookId,
+            {
+              progressMode: "PAGES",
+              currentPage: session.startPage,
+            },
+            tx,
+          );
+        } else {
+          await updateUserBookService(
+            userId,
+            bookId,
+            {
+              progressMode: "PERCENT",
+              currentPercent: session.startPercent ?? 0,
+            },
+            tx,
+          );
+        }
       }
     }
-  }
+  });
 
   return {
     success: true,

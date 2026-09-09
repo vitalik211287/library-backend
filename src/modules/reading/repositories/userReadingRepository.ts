@@ -1,6 +1,8 @@
 import prisma from "../../../utils/prisma.js";
 
-import type { ProgressMode } from "@prisma/client";
+import type { Prisma, ProgressMode } from "@prisma/client";
+
+type DbClient = Prisma.TransactionClient | typeof prisma;
 
 export const getActiveUserReadingSession = async (
   userId: string,
@@ -168,8 +170,9 @@ export const getUserReadingSessionById = async (
   userId: string,
   bookId: string,
   sessionId: string,
+  db: DbClient = prisma,
 ) => {
-  return prisma.readingSession.findFirst({
+  return db.readingSession.findFirst({
     where: {
       id: sessionId,
       userId,
@@ -190,8 +193,9 @@ type UpdateReadingSessionProgressData = {
 export const updateUserReadingSessionProgress = async (
   sessionId: string,
   data: UpdateReadingSessionProgressData,
+  db: DbClient = prisma,
 ) => {
-  return prisma.readingSession.update({
+  return db.readingSession.update({
     where: {
       id: sessionId,
     },
@@ -208,8 +212,11 @@ export const updateUserReadingSessionProgress = async (
   });
 };
 
-export const deleteUserReadingSession = async (sessionId: string) => {
-  return prisma.readingSession.delete({
+export const deleteUserReadingSession = async (
+  sessionId: string,
+  db: DbClient = prisma,
+) => {
+  return db.readingSession.delete({
     where: {
       id: sessionId,
     },
@@ -219,8 +226,9 @@ export const deleteUserReadingSession = async (sessionId: string) => {
 export const getLatestFinishedUserReadingSession = async (
   userId: string,
   bookId: string,
+  db: DbClient = prisma,
 ) => {
-  return prisma.readingSession.findFirst({
+  return db.readingSession.findFirst({
     where: {
       userId,
       bookId,

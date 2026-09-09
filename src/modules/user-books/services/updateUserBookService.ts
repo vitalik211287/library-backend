@@ -1,4 +1,6 @@
-import type { ProgressMode, ReadingStatus } from "@prisma/client";
+import type { Prisma, ProgressMode, ReadingStatus } from "@prisma/client";
+
+type DbClient = Prisma.TransactionClient | typeof prisma;
 
 import prisma from "../../../utils/prisma.js";
 
@@ -20,8 +22,9 @@ export const updateUserBookService = async (
   userId: string,
   bookId: string,
   data: UpdateUserBookData,
+  db: DbClient = prisma,
 ) => {
-  const userBook = await getUserBook(userId, bookId);
+  const userBook = await getUserBook(userId, bookId, db);
 
   if (
     data.currentPage !== undefined &&
@@ -91,7 +94,7 @@ export const updateUserBookService = async (
     }
   }
 
-  const updatedUserBook = await updateUserBook(userId, bookId, updateData);
+  const updatedUserBook = await updateUserBook(userId, bookId, updateData, db);
 
   const activities = [];
 
@@ -155,7 +158,7 @@ export const updateUserBookService = async (
   }
 
   if (activities.length > 0) {
-    await prisma.activityLog.createMany({
+    await db.activityLog.createMany({
       data: activities,
     });
   }

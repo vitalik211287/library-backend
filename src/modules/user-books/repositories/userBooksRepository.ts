@@ -1,6 +1,8 @@
 import prisma from "../../../utils/prisma.js";
 
-import type { ProgressMode, ReadingStatus } from "@prisma/client";
+import type { Prisma, ProgressMode, ReadingStatus } from "@prisma/client";
+
+type DbClient = Prisma.TransactionClient | typeof prisma;
 
 type UpdateUserBookData = {
   progressMode?: ProgressMode;
@@ -18,8 +20,12 @@ type UpdateReadingProgressData = {
   status: ReadingStatus;
 };
 
-export const getUserBook = async (userId: string, bookId: string) => {
-  return prisma.userBook.findUnique({
+export const getUserBook = async (
+  userId: string,
+  bookId: string,
+  db: DbClient = prisma,
+) => {
+  return db.userBook.findUnique({
     where: {
       userId_bookId: {
         userId,
@@ -72,8 +78,9 @@ export const updateUserBook = async (
   userId: string,
   bookId: string,
   data: UpdateUserBookData,
+  db: DbClient = prisma,
 ) => {
-  const existingUserBook = await getUserBook(userId, bookId);
+  const existingUserBook = await getUserBook(userId, bookId, db);
 
   const finishedAt =
     data.status === "FINISHED"
@@ -82,7 +89,7 @@ export const updateUserBook = async (
         ? null
         : undefined;
 
-  return prisma.userBook.upsert({
+  return db.userBook.upsert({
     where: {
       userId_bookId: {
         userId,
