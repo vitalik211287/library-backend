@@ -8,8 +8,13 @@ import {
   calculateReadingSessionMetrics,
   calculateReadingStreak,
   getFinishedBooksInRange,
-  getSafeTimeZone,
 } from "./readingMetricsService.js";
+
+import {
+  getDateKey,
+  getSafeTimeZone,
+  zonedDateTimeToUtc,
+} from "../../../utils/timeZone.js";
 
 type GenreStat = {
   name: string;
@@ -41,9 +46,19 @@ export const getUserStatsService = async (
 ) => {
   const safeTimeZone = getSafeTimeZone(timeZone);
 
-  const from = new Date(Date.UTC(year, 0, 1));
+  const from = zonedDateTimeToUtc(
+    year,
+    1,
+    1,
+    safeTimeZone,
+  );
 
-  const to = new Date(Date.UTC(year + 1, 0, 1));
+  const to = zonedDateTimeToUtc(
+    year + 1,
+    1,
+    1,
+    safeTimeZone,
+  );
 
   const [yearSessions, allSessions, finishedUserBooks] = await Promise.all([
     getUserReadingSessionsForStats(userId, from, to),
@@ -102,7 +117,13 @@ export const getUserStatsService = async (
   );
 
   for (const session of yearSessions) {
-    const month = session.startedAt.getUTCMonth();
+    const month =
+      Number(
+        getDateKey(
+          session.startedAt,
+          safeTimeZone,
+        ).slice(5, 7),
+      ) - 1;
 
     const monthStat = months[month];
 
@@ -128,7 +149,13 @@ export const getUserStatsService = async (
       continue;
     }
 
-    const month = item.finishedAt.getUTCMonth();
+    const month =
+      Number(
+        getDateKey(
+          item.finishedAt,
+          safeTimeZone,
+        ).slice(5, 7),
+      ) - 1;
 
     const monthStat = months[month];
 
