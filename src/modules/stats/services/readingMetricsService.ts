@@ -1,3 +1,9 @@
+import {
+  getDateKey,
+  getSafeTimeZone,
+} from "../../../utils/timeZone.js";
+
+export { getSafeTimeZone } from "../../../utils/timeZone.js";
 type ReadingSessionMetricSource = {
   progressMode: "PAGES" | "PERCENT";
 
@@ -18,50 +24,6 @@ type FinishedUserBookMetricSource = {
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
-/* =========================
-   TIME ZONE
-========================= */
-
-export const getSafeTimeZone = (timeZone?: string) => {
-  if (!timeZone) {
-    return "UTC";
-  }
-
-  try {
-    new Intl.DateTimeFormat("en-US", {
-      timeZone,
-    }).format();
-
-    return timeZone;
-  } catch {
-    return "UTC";
-  }
-};
-
-/* =========================
-   DATE HELPERS
-========================= */
-
-const getDateKey = (date: Date, timeZone: string) => {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-
-  const year = parts.find((part) => part.type === "year")?.value;
-
-  const month = parts.find((part) => part.type === "month")?.value;
-
-  const day = parts.find((part) => part.type === "day")?.value;
-
-  if (!year || !month || !day) {
-    throw new Error("Failed to format date");
-  }
-
-  return `${year}-${month}-${day}`;
-};
 
 const dateKeyToDayNumber = (dateKey: string) => {
   const [year, month, day] = dateKey.split("-").map(Number);

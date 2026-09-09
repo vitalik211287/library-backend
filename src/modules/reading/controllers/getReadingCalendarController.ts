@@ -27,11 +27,17 @@ export const getReadingCalendarController =
         req.query.month,
       );
 
+      const timeZone =
+        typeof req.query.timeZone === "string"
+          ? req.query.timeZone
+          : undefined;
+
       const calendar =
         await getReadingCalendarService(
           userId,
           year,
           month,
+          timeZone,
         );
 
       return res

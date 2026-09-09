@@ -1,3 +1,9 @@
+import {
+  getDateKey,
+  getSafeTimeZone,
+  zonedDateTimeToUtc,
+} from "../../../utils/timeZone.js";
+
 import { getUserReadingSessionsForPeriod } from "../repositories/readingCalendarRepository.js";
 
 type CalendarBook = {
@@ -19,6 +25,7 @@ export const getReadingCalendarService = async (
   userId: string,
   year: number,
   month: number,
+  timeZone?: string,
 ) => {
   if (
     !Number.isInteger(year) ||
@@ -29,9 +36,24 @@ export const getReadingCalendarService = async (
     throw new Error("Invalid year or month");
   }
 
-  const startDate = new Date(Date.UTC(year, month - 1, 1));
+  const safeTimeZone = getSafeTimeZone(timeZone);
 
-  const endDate = new Date(Date.UTC(year, month, 1));
+  const startDate = zonedDateTimeToUtc(
+    year,
+    month,
+    1,
+    safeTimeZone,
+  );
+
+  const nextMonthYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
+
+  const endDate = zonedDateTimeToUtc(
+    nextMonthYear,
+    nextMonth,
+    1,
+    safeTimeZone,
+  );
 
   const sessions = await getUserReadingSessionsForPeriod(
     userId,
@@ -42,7 +64,10 @@ export const getReadingCalendarService = async (
   const daysMap = new Map<string, CalendarDay>();
 
   for (const session of sessions) {
-    const date = session.startedAt.toISOString().slice(0, 10);
+    const date = getDateKey(
+      session.startedAt,
+      safeTimeZone,
+    );
 
     const existing = daysMap.get(date) ?? {
       date,
