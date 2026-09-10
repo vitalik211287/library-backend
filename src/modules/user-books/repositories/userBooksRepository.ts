@@ -217,6 +217,7 @@ export const getWishlistUserBooks = async (userId: string) => {
     where: {
       userId,
       isWishlist: true,
+      status: "NOT_STARTED",
     },
 
     include: {

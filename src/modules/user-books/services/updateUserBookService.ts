@@ -66,9 +66,6 @@ export const updateUserBookService = async (
     progressMode,
   };
 
-  if (data.status !== undefined) {
-    updateData.isWishlist = false;
-  }
 
   if (data.status === "FINISHED") {
     if (progressMode === "PERCENT") {
