@@ -10,11 +10,13 @@ import {
   getLibraryBookController,
   getLibraryBooksController,
   getLibraryMembersController,
+  getLibraryGoalController,
   getMyLibrariesController,
   removeLibraryMemberController,
   updateLibraryBookController,
   updateLibraryBookCoverController,
   updateLibraryController,
+  updateLibraryGoalController,
   updateLibraryMemberRoleController,
 } from "./controllers/librariesController.js";
 
@@ -69,6 +71,21 @@ librariesRouter.post("/", createLibraryController);
 librariesRouter.patch("/:libraryId", updateLibraryController);
 
 librariesRouter.delete("/:libraryId", deleteLibraryController);
+
+/* =========================
+   LIBRARY GOAL
+========================= */
+
+librariesRouter.get(
+  "/:libraryId/goal",
+  getLibraryGoalController,
+);
+
+librariesRouter.put(
+  "/:libraryId/goal",
+  updateLibraryGoalController,
+);
+
 
 /* =========================
    MEMBERS

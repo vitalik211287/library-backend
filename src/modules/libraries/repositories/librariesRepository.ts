@@ -397,3 +397,64 @@ export const createBookInLibrary = async (
     return book;
   });
 };
+
+
+/* =========================
+   LIBRARY GOAL
+========================= */
+
+export const getLibraryGoal = async (
+  libraryId: string,
+  year: number,
+) => {
+  return prisma.libraryGoal.findUnique({
+    where: {
+      libraryId_year: {
+        libraryId,
+        year,
+      },
+    },
+  });
+};
+
+export const upsertLibraryGoal = async (
+  libraryId: string,
+  year: number,
+  booksGoal: number,
+) => {
+  return prisma.libraryGoal.upsert({
+    where: {
+      libraryId_year: {
+        libraryId,
+        year,
+      },
+    },
+    create: {
+      libraryId,
+      year,
+      booksGoal,
+    },
+    update: {
+      booksGoal,
+    },
+  });
+};
+
+export const countLibraryBookAddedEvents = async (
+  libraryId: string,
+  year: number,
+) => {
+  const from = new Date(Date.UTC(year, 0, 1));
+  const to = new Date(Date.UTC(year + 1, 0, 1));
+
+  return prisma.libraryBookEvent.count({
+    where: {
+      libraryId,
+      type: "BOOK_ADDED",
+      occurredAt: {
+        gte: from,
+        lt: to,
+      },
+    },
+  });
+};

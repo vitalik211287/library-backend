@@ -14,11 +14,13 @@ import {
   getLibraryBookService,
   getLibraryBooksService,
   getLibraryMembersService,
+  getLibraryGoalService,
   getMyLibrariesService,
   removeLibraryMemberService,
   updateLibraryBookCoverService,
   updateLibraryBookService,
   updateLibraryMemberRoleService,
+  updateLibraryGoalService,
   updateLibraryService,
 } from "../services/librariesService.js";
 
@@ -625,3 +627,108 @@ export const updateLibraryBookCoverController = async (
   }
 };
 
+
+
+/* =========================
+   LIBRARY GOAL
+========================= */
+
+export const getLibraryGoalController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const userId = req.userId;
+    const { libraryId } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    if (!libraryId || typeof libraryId !== "string") {
+      return res.status(400).json({
+        message: "Library ID is required",
+      });
+    }
+
+    let year: number | undefined;
+
+    if (req.query.year !== undefined) {
+      const parsedYear = Number(req.query.year);
+
+      if (!Number.isInteger(parsedYear)) {
+        return res.status(400).json({
+          message: "Invalid year",
+        });
+      }
+
+      year = parsedYear;
+    }
+
+    const goal = await getLibraryGoalService(
+      userId,
+      libraryId,
+      year,
+    );
+
+    return res.status(200).json(goal);
+  } catch (error) {
+    return handleLibraryManagementError(error, res);
+  }
+};
+
+export const updateLibraryGoalController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const userId = req.userId;
+    const { libraryId } = req.params;
+    const { booksGoal } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    if (!libraryId || typeof libraryId !== "string") {
+      return res.status(400).json({
+        message: "Library ID is required",
+      });
+    }
+
+    let year: number | undefined;
+
+    if (req.query.year !== undefined) {
+      const parsedYear = Number(req.query.year);
+
+      if (!Number.isInteger(parsedYear)) {
+        return res.status(400).json({
+          message: "Invalid year",
+        });
+      }
+
+      year = parsedYear;
+    }
+
+    if (!Number.isInteger(booksGoal) || booksGoal <= 0) {
+      return res.status(400).json({
+        message: "Books goal must be a positive integer",
+      });
+    }
+
+    const goal = await updateLibraryGoalService(
+      userId,
+      libraryId,
+      booksGoal,
+      year,
+    );
+
+    return res.status(200).json(goal);
+  } catch (error) {
+    return handleLibraryManagementError(error, res);
+  }
+};

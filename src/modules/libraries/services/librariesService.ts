@@ -1,8 +1,9 @@
-import type { LibraryRole, Prisma } from "@prisma/client";
+﻿import type { LibraryRole, Prisma } from "@prisma/client";
 
 import {
   addLibraryMember,
   countLibraryOwners,
+  countLibraryBookAddedEvents,
   createBookInLibrary,
   createLibrary,
   deleteLibrary,
@@ -11,12 +12,14 @@ import {
   getLibraryBooks,
   getLibraryMembers,
   getLibraryMembership,
+  getLibraryGoal,
   getUserLibraries,
   removeLibraryMember,
   updateLibraryBook,
   updateLibraryBookCover,
   updateLibraryMemberRole,
   updateLibraryName,
+  upsertLibraryGoal,
 } from "../repositories/librariesRepository.js";
 
 import { getUserByEmail } from "../../users/repositories/usersRepository.js";
@@ -539,4 +542,103 @@ export const updateLibraryBookCoverService = async (
 
 
 
+/* =========================
+   LIBRARY GOAL
+========================= */
 
+const resolveLibraryGoalYear = (year?: number) => {
+  const resolvedYear = year ?? new Date().getUTCFullYear();
+
+  if (
+    !Number.isInteger(resolvedYear) ||
+    resolvedYear < 1900 ||
+    resolvedYear > 2100
+  ) {
+    throw new Error("Invalid year");
+  }
+
+  return resolvedYear;
+};
+
+const buildLibraryGoalProgress = (
+  year: number,
+  booksGoal: number | null,
+  progress: number,
+) => {
+  if (booksGoal === null) {
+    return {
+      year,
+      goal: null,
+      progress,
+      remaining: null,
+      percent: null,
+      completed: false,
+    };
+  }
+
+  return {
+    year,
+    goal: booksGoal,
+    progress,
+    remaining: Math.max(booksGoal - progress, 0),
+    percent: Math.min(
+      Math.round((progress / booksGoal) * 100),
+      100,
+    ),
+    completed: progress >= booksGoal,
+  };
+};
+
+export const getLibraryGoalService = async (
+  currentUserId: string,
+  libraryId: string,
+  year?: number,
+) => {
+  const membership = await getLibraryMembership(
+    libraryId,
+    currentUserId,
+  );
+
+  if (!membership) {
+    throw new Error("Library not found");
+  }
+
+  const resolvedYear = resolveLibraryGoalYear(year);
+
+  const [goal, progress] = await Promise.all([
+    getLibraryGoal(libraryId, resolvedYear),
+    countLibraryBookAddedEvents(libraryId, resolvedYear),
+  ]);
+
+  return buildLibraryGoalProgress(
+    resolvedYear,
+    goal?.booksGoal ?? null,
+    progress,
+  );
+};
+
+export const updateLibraryGoalService = async (
+  currentUserId: string,
+  libraryId: string,
+  booksGoal: number,
+  year?: number,
+) => {
+  await assertCanManageLibrary(libraryId, currentUserId);
+
+  if (!Number.isInteger(booksGoal) || booksGoal <= 0) {
+    throw new Error("Books goal must be a positive integer");
+  }
+
+  const resolvedYear = resolveLibraryGoalYear(year);
+
+  const [goal, progress] = await Promise.all([
+    upsertLibraryGoal(libraryId, resolvedYear, booksGoal),
+    countLibraryBookAddedEvents(libraryId, resolvedYear),
+  ]);
+
+  return buildLibraryGoalProgress(
+    resolvedYear,
+    goal.booksGoal,
+    progress,
+  );
+};
