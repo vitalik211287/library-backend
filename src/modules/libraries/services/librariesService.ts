@@ -364,48 +364,61 @@ export const addBookToLibraryService = async (
    * з даними конкретної бібліотеки.
    */
   if (existingBook) {
-    const libraryBook = await prisma.libraryBook.create({
-      data: {
-        libraryId,
+    const libraryBook = await prisma.$transaction(async (tx) => {
+      const createdLibraryBook = await tx.libraryBook.create({
+        data: {
+          libraryId,
 
-        bookId: existingBook.id,
+          bookId: existingBook.id,
 
-        title: data.title,
+          title: data.title,
 
-        author: data.author,
+          author: data.author,
 
-        ...(data.publisher !== undefined && {
-          publisher: data.publisher,
-        }),
+          ...(data.publisher !== undefined && {
+            publisher: data.publisher,
+          }),
 
-        ...(data.year !== undefined && {
-          year: data.year,
-        }),
+          ...(data.year !== undefined && {
+            year: data.year,
+          }),
 
-        ...(data.pages !== undefined && {
-          pages: data.pages,
-        }),
+          ...(data.pages !== undefined && {
+            pages: data.pages,
+          }),
 
-        ...(data.genre !== undefined && {
-          genre: data.genre,
-        }),
+          ...(data.genre !== undefined && {
+            genre: data.genre,
+          }),
 
-        ...(data.language !== undefined && {
-          language: data.language,
-        }),
+          ...(data.language !== undefined && {
+            language: data.language,
+          }),
 
-        ...(data.description !== undefined && {
-          description: data.description,
-        }),
+          ...(data.description !== undefined && {
+            description: data.description,
+          }),
 
-        ...((coverUrl || data.coverUrl) && {
-          coverUrl: coverUrl ?? data.coverUrl,
-        }),
-      },
+          ...((coverUrl || data.coverUrl) && {
+            coverUrl: coverUrl ?? data.coverUrl,
+          }),
+        },
 
-      include: {
-        book: true,
-      },
+        include: {
+          book: true,
+        },
+      });
+
+      await tx.libraryBookEvent.create({
+        data: {
+          libraryId,
+          bookId: existingBook.id,
+          type: "BOOK_ADDED",
+          occurredAt: createdLibraryBook.addedAt,
+        },
+      });
+
+      return createdLibraryBook;
     });
 
     return buildEffectiveBook({

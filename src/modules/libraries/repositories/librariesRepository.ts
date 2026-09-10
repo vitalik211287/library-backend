@@ -374,7 +374,7 @@ export const createBookInLibrary = async (
       },
     });
 
-    await tx.libraryBook.create({
+    const libraryBook = await tx.libraryBook.create({
       data: {
         libraryId,
         bookId: book.id,
@@ -382,6 +382,15 @@ export const createBookInLibrary = async (
         ...(coverUrl && {
           coverUrl,
         }),
+      },
+    });
+
+    await tx.libraryBookEvent.create({
+      data: {
+        libraryId,
+        bookId: book.id,
+        type: "BOOK_ADDED",
+        occurredAt: libraryBook.addedAt,
       },
     });
 

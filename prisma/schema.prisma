@@ -81,6 +81,12 @@ model Book {
   coverUrl    String?
   description String?
 
+  // Legacy fields kept for database compatibility.
+  // Personal reading state is stored in UserBook.
+  currentPage Int           @default(0)
+  rating      Int?
+  status      ReadingStatus @default(NOT_STARTED)
+
   users           UserBook[]
   readingSessions ReadingSession[]
 
@@ -172,6 +178,9 @@ model Library {
   members LibraryMember[]
   books   LibraryBook[]
 
+  goals      LibraryGoal[]
+  bookEvents LibraryBookEvent[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -219,6 +228,43 @@ model LibraryBook {
 
   @@unique([libraryId, bookId])
   @@index([libraryId])
+  @@index([bookId])
+}
+
+enum LibraryBookEventType {
+  BOOK_ADDED
+  BOOK_REMOVED
+}
+
+model LibraryGoal {
+  id String @id @default(uuid())
+
+  libraryId String
+  library   Library @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+
+  year      Int
+  booksGoal Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([libraryId, year])
+  @@index([libraryId])
+}
+
+model LibraryBookEvent {
+  id String @id @default(uuid())
+
+  libraryId String
+  library   Library @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+
+  bookId String
+
+  type LibraryBookEventType
+
+  occurredAt DateTime @default(now())
+
+  @@index([libraryId, type, occurredAt])
   @@index([bookId])
 }
 
