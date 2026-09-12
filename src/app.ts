@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import cors from "cors";
 import readingRouter from "./modules/reading/readingRoutes.js";
 import booksRouter from "./modules/books/booksRoutes.js";
@@ -7,6 +7,8 @@ import userBooksRouter from "./modules/user-books/routes/userBooksRoutes.js";
 import usersRouter from "./modules/users/usersRoutes.js";
 import librariesRouter from "./modules/libraries/librariesRoutes.js";
 import adminRouter from "./modules/admin/adminRoutes.js";
+import socialRouter from "./modules/social/socialRoutes.js";
+import notificationsRouter from "./modules/notifications/notificationsRoutes.js";
 
 const app = express();
 
@@ -36,5 +38,11 @@ app.use("/api/libraries", librariesRouter);
 
 app.use("/api/admin", adminRouter);
 
+app.use("/api/social", socialRouter);
+
+app.use("/api/notifications", notificationsRouter);
+
 export default app;
+
+
 

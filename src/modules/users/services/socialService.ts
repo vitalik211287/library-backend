@@ -1,4 +1,4 @@
-import {
+﻿import {
   followUser,
   getFollowers,
   getFollowing,
@@ -7,6 +7,8 @@ import {
   searchUsers,
   unfollowUser,
 } from "../repositories/usersRepository.js";
+
+import { createNewFollowerNotificationService } from "../../notifications/services/notificationsService.js";
 
 export const searchUsersService = async (
   currentUserId: string,
@@ -91,6 +93,11 @@ export const followUserService = async (
 
   await followUser(currentUserId, targetUserId);
 
+  await createNewFollowerNotificationService({
+    recipientUserId: targetUserId,
+    actorUserId: currentUserId,
+  });
+
   return {
     success: true,
     isFollowing: true,
@@ -119,8 +126,11 @@ export const unfollowUserService = async (
   };
 };
 
-export const getFollowingService = async (userId: string) => {
-  const items = await getFollowing(userId);
+export const getFollowingService = async (
+  targetUserId: string,
+  currentUserId: string = targetUserId,
+) => {
+  const items = await getFollowing(targetUserId, currentUserId);
 
   return items.map((item) => ({
     followedAt: item.createdAt,
@@ -131,7 +141,9 @@ export const getFollowingService = async (userId: string) => {
 
     avatarUrl: item.following.avatarUrl,
 
-    isFollowing: true,
+    isCurrentUser: item.following.id === currentUserId,
+
+    isFollowing: item.following.followers.length > 0,
 
     followersCount: item.following._count.followers,
 
@@ -139,8 +151,11 @@ export const getFollowingService = async (userId: string) => {
   }));
 };
 
-export const getFollowersService = async (userId: string) => {
-  const items = await getFollowers(userId);
+export const getFollowersService = async (
+  targetUserId: string,
+  currentUserId: string = targetUserId,
+) => {
+  const items = await getFollowers(targetUserId, currentUserId);
 
   return items.map((item) => ({
     followedAt: item.createdAt,
@@ -151,6 +166,8 @@ export const getFollowersService = async (userId: string) => {
 
     avatarUrl: item.follower.avatarUrl,
 
+    isCurrentUser: item.follower.id === currentUserId,
+
     isFollowing: item.follower.followers.length > 0,
 
     followersCount: item.follower._count.followers,
@@ -158,3 +175,7 @@ export const getFollowersService = async (userId: string) => {
     followingCount: item.follower._count.following,
   }));
 };
+
+
+
+

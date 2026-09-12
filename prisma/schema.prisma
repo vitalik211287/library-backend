@@ -50,6 +50,12 @@ model User {
 
   libraryMemberships LibraryMember[]
   activityLogs       ActivityLog[]
+
+  socialActivities   SocialActivity[]
+  activityKudosGiven ActivityKudos[]
+
+  notificationsReceived Notification[] @relation("NotificationRecipient")
+  notificationsSent     Notification[] @relation("NotificationActor")
 }
 
 model Follow {
@@ -178,8 +184,9 @@ model Library {
   members LibraryMember[]
   books   LibraryBook[]
 
-  goals      LibraryGoal[]
-  bookEvents LibraryBookEvent[]
+  goals         LibraryGoal[]
+  bookEvents    LibraryBookEvent[]
+  notifications Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -294,4 +301,84 @@ model ActivityLog {
 
   @@index([userId, createdAt])
   @@index([bookId, createdAt])
+}
+
+enum SocialActivityType {
+  ACHIEVEMENT_UNLOCKED
+  BOOK_FINISHED
+}
+
+enum NotificationScope {
+  USER
+  LIBRARY
+}
+
+enum NotificationType {
+  KUDOS_RECEIVED
+  NEW_FOLLOWER
+  LIBRARY_BOOK_ADDED
+}
+
+model SocialActivity {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type SocialActivityType
+
+  achievementId String?
+  bookId        String?
+
+  createdAt DateTime @default(now())
+
+  kudos ActivityKudos[]
+
+  @@unique([userId, type, achievementId])
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@index([bookId])
+}
+
+model ActivityKudos {
+  id String @id @default(uuid())
+
+  activityId String
+  activity   SocialActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([activityId, userId])
+  @@index([activityId])
+  @@index([userId])
+}
+
+model Notification {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+
+  actorId String
+  actor   User   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+
+  type  NotificationType
+  scope NotificationScope @default(USER)
+
+  activityId String?
+
+  libraryId String?
+  library   Library? @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+
+  isRead Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead, createdAt])
+  @@index([actorId, createdAt])
+  @@index([activityId])
+  @@index([libraryId, createdAt])
 }

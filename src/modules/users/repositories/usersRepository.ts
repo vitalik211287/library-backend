@@ -1,4 +1,4 @@
-import prisma from "../../../utils/prisma.js";
+﻿import prisma from "../../../utils/prisma.js";
 
 export const getUserByEmail = async (email: string) => {
   return prisma.user.findUnique({
@@ -207,10 +207,13 @@ export const unfollowUser = async (followerId: string, followingId: string) => {
   });
 };
 
-export const getFollowing = async (userId: string) => {
+export const getFollowing = async (
+  targetUserId: string,
+  currentUserId: string,
+) => {
   return prisma.follow.findMany({
     where: {
-      followerId: userId,
+      followerId: targetUserId,
     },
 
     select: {
@@ -222,40 +225,9 @@ export const getFollowing = async (userId: string) => {
           name: true,
           avatarUrl: true,
 
-          _count: {
-            select: {
-              followers: true,
-              following: true,
-            },
-          },
-        },
-      },
-    },
-
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-};
-
-export const getFollowers = async (userId: string) => {
-  return prisma.follow.findMany({
-    where: {
-      followingId: userId,
-    },
-
-    select: {
-      createdAt: true,
-
-      follower: {
-        select: {
-          id: true,
-          name: true,
-          avatarUrl: true,
-
           followers: {
             where: {
-              followerId: userId,
+              followerId: currentUserId,
             },
 
             select: {
@@ -278,3 +250,48 @@ export const getFollowers = async (userId: string) => {
     },
   });
 };
+
+export const getFollowers = async (
+  targetUserId: string,
+  currentUserId: string,
+) => {
+  return prisma.follow.findMany({
+    where: {
+      followingId: targetUserId,
+    },
+
+    select: {
+      createdAt: true,
+
+      follower: {
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+
+          followers: {
+            where: {
+              followerId: currentUserId,
+            },
+
+            select: {
+              id: true,
+            },
+          },
+
+          _count: {
+            select: {
+              followers: true,
+              following: true,
+            },
+          },
+        },
+      },
+    },
+
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};
+

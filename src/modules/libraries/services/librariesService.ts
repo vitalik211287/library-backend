@@ -1,4 +1,4 @@
-﻿import type { LibraryRole, Prisma } from "@prisma/client";
+import type { LibraryRole, Prisma } from "@prisma/client";
 
 import {
   addLibraryMember,
@@ -26,6 +26,8 @@ import { getUserByEmail } from "../../users/repositories/usersRepository.js";
 
 import { buildEffectiveBook } from "../../../utils/effectiveBook.js";
 import prisma from "../../../utils/prisma.js";
+
+import { createLibraryBookAddedNotificationsService } from "../../notifications/services/notificationsService.js";
 
 const MANAGER_ROLES: LibraryRole[] = ["OWNER", "ADMIN"];
 
@@ -349,6 +351,18 @@ export const assertCanAddBookToLibraryService = async (
   return existingBook;
 };
 
+const notifyLibraryMembersAboutAddedBook = async (
+  libraryId: string,
+  actorUserId: string,
+) => {
+  const members = await getLibraryMembers(libraryId);
+
+  await createLibraryBookAddedNotificationsService({
+    libraryId,
+    actorUserId,
+    memberUserIds: members.map((member) => member.userId),
+  });
+};
 export const addBookToLibraryService = async (
   userId: string,
   libraryId: string,
@@ -424,6 +438,11 @@ export const addBookToLibraryService = async (
       return createdLibraryBook;
     });
 
+    await notifyLibraryMembersAboutAddedBook(
+      libraryId,
+      userId,
+    );
+
     return buildEffectiveBook({
       book: libraryBook.book,
       libraryBook,
@@ -447,6 +466,11 @@ export const addBookToLibraryService = async (
   if (!libraryBook) {
     throw new Error("Failed to create library book");
   }
+
+  await notifyLibraryMembersAboutAddedBook(
+    libraryId,
+    userId,
+  );
 
   return buildEffectiveBook({
     book: libraryBook.book,
