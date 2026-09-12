@@ -81,6 +81,16 @@ export const getAdminUserById = async (userId: string) => {
           actorUserId: true,
           type: true,
           occurredAt: true,
+
+          book: {
+            select: {
+              id: true,
+              title: true,
+              author: true,
+              coverUrl: true,
+            },
+          },
+
           library: {
             select: {
               id: true,

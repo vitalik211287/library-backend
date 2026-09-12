@@ -100,9 +100,10 @@ model Book {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  libraries     LibraryBook[]
-  activityLogs  ActivityLog[]
-  notifications Notification[]
+  libraries         LibraryBook[]
+  activityLogs      ActivityLog[]
+  libraryBookEvents LibraryBookEvent[]
+  notifications     Notification[]
 }
 
 model UserBook {
@@ -268,6 +269,7 @@ model LibraryBookEvent {
   library   Library @relation(fields: [libraryId], references: [id], onDelete: Cascade)
 
   bookId String
+  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
   actorUserId String?
   actor       User?   @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
