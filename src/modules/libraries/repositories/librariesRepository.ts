@@ -360,6 +360,7 @@ export const updateLibraryBookCover = async (
 
 export const createBookInLibrary = async (
   libraryId: string,
+  actorUserId: string,
   data: Prisma.BookCreateInput,
   coverUrl?: string,
 ) => {
@@ -389,6 +390,7 @@ export const createBookInLibrary = async (
       data: {
         libraryId,
         bookId: book.id,
+        actorUserId,
         type: "BOOK_ADDED",
         occurredAt: libraryBook.addedAt,
       },

@@ -432,6 +432,7 @@ export const addBookToLibraryService = async (
         data: {
           libraryId,
           bookId: existingBook.id,
+          actorUserId: userId,
           type: "BOOK_ADDED",
           occurredAt: createdLibraryBook.addedAt,
         },
@@ -456,7 +457,7 @@ export const addBookToLibraryService = async (
    * Глобальної Book ще немає.
    * Створюємо Book + LibraryBook.
    */
-  const book = await createBookInLibrary(libraryId, data, coverUrl);
+  const book = await createBookInLibrary(libraryId, userId, data, coverUrl);
 
   /*
    * Беремо щойно створений

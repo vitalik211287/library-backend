@@ -49,6 +49,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   libraryMemberships LibraryMember[]
+  libraryBookEvents  LibraryBookEvent[]
   activityLogs       ActivityLog[]
 
   socialActivities   SocialActivity[]
@@ -268,12 +269,16 @@ model LibraryBookEvent {
 
   bookId String
 
+  actorUserId String?
+  actor       User?   @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
   type LibraryBookEventType
 
   occurredAt DateTime @default(now())
 
   @@index([libraryId, type, occurredAt])
   @@index([bookId])
+  @@index([actorUserId, occurredAt])
 }
 
 enum ActivityType {
