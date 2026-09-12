@@ -74,10 +74,12 @@ export const createLibraryBookAddedNotificationsService = async ({
   libraryId,
   actorUserId,
   memberUserIds,
+  bookId,
 }: {
   libraryId: string;
   actorUserId: string;
   memberUserIds: string[];
+  bookId: string;
 }) => {
   const recipientUserIds = [
     ...new Set(
@@ -91,5 +93,6 @@ export const createLibraryBookAddedNotificationsService = async ({
     recipientUserIds,
     actorId: actorUserId,
     libraryId,
+    bookId,
   });
 };

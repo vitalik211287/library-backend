@@ -1,4 +1,4 @@
-﻿import prisma from "../../../utils/prisma.js";
+import prisma from "../../../utils/prisma.js";
 
 export const createNotification = async (data: {
   userId: string;
@@ -34,6 +34,15 @@ export const getNotifications = async (userId: string) => {
           id: true,
           name: true,
           avatarUrl: true,
+        },
+      },
+
+      book: {
+        select: {
+          id: true,
+          title: true,
+          author: true,
+          coverUrl: true,
         },
       },
     },
@@ -88,6 +97,7 @@ export const createLibraryNotifications = async (data: {
   recipientUserIds: string[];
   actorId: string;
   libraryId: string;
+  bookId: string;
 }) => {
   if (data.recipientUserIds.length === 0) {
     return {
@@ -102,6 +112,7 @@ export const createLibraryNotifications = async (data: {
       type: "LIBRARY_BOOK_ADDED",
       scope: "LIBRARY",
       libraryId: data.libraryId,
+      bookId: data.bookId,
     })),
   });
 };

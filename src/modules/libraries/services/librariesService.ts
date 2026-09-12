@@ -354,6 +354,7 @@ export const assertCanAddBookToLibraryService = async (
 const notifyLibraryMembersAboutAddedBook = async (
   libraryId: string,
   actorUserId: string,
+  bookId: string,
 ) => {
   const members = await getLibraryMembers(libraryId);
 
@@ -361,6 +362,7 @@ const notifyLibraryMembersAboutAddedBook = async (
     libraryId,
     actorUserId,
     memberUserIds: members.map((member) => member.userId),
+    bookId,
   });
 };
 export const addBookToLibraryService = async (
@@ -441,6 +443,7 @@ export const addBookToLibraryService = async (
     await notifyLibraryMembersAboutAddedBook(
       libraryId,
       userId,
+      libraryBook.book.id,
     );
 
     return buildEffectiveBook({
@@ -468,9 +471,10 @@ export const addBookToLibraryService = async (
   }
 
   await notifyLibraryMembersAboutAddedBook(
-    libraryId,
-    userId,
-  );
+      libraryId,
+      userId,
+      libraryBook.book.id,
+    );
 
   return buildEffectiveBook({
     book: libraryBook.book,
