@@ -26,6 +26,10 @@ export const getSocialFeedController = async (
 
     return res.status(500).json({
       message: "Failed to get social feed",
+      error:
+        error instanceof Error
+          ? error.message
+          : String(error),
     });
   }
 };
