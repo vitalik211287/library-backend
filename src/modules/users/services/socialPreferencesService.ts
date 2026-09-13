@@ -2,7 +2,7 @@ import { getUserById } from "../repositories/usersRepository.js";
 
 import {
   getSocialPreference,
-  setSocialNotificationPreference,
+  setSocialActivityNotificationPreference,
 } from "../repositories/socialPreferencesRepository.js";
 
 export const getSocialPreferenceService = async (
@@ -11,7 +11,7 @@ export const getSocialPreferenceService = async (
 ) => {
   if (currentUserId === targetUserId) {
     return {
-      muteNotifications: false,
+      notifyActivity: false,
     };
   }
 
@@ -27,15 +27,14 @@ export const getSocialPreferenceService = async (
   );
 
   return {
-    muteNotifications:
-      preference?.muteNotifications ?? false,
+    notifyActivity: preference?.notifyActivity ?? false,
   };
 };
 
 export const updateSocialPreferenceService = async (
   currentUserId: string,
   targetUserId: string,
-  muteNotifications: boolean,
+  notifyActivity: boolean,
 ) => {
   if (currentUserId === targetUserId) {
     throw new Error(
@@ -50,13 +49,13 @@ export const updateSocialPreferenceService = async (
   }
 
   const preference =
-    await setSocialNotificationPreference(
+    await setSocialActivityNotificationPreference(
       currentUserId,
       targetUserId,
-      muteNotifications,
+      notifyActivity,
     );
 
   return {
-    muteNotifications: preference.muteNotifications,
+    notifyActivity: preference.notifyActivity,
   };
 };

@@ -14,10 +14,10 @@ export const getSocialPreference = async (
   });
 };
 
-export const setSocialNotificationPreference = async (
+export const setSocialActivityNotificationPreference = async (
   userId: string,
   targetUserId: string,
-  muteNotifications: boolean,
+  notifyActivity: boolean,
 ) => {
   return prisma.userSocialPreference.upsert({
     where: {
@@ -28,25 +28,13 @@ export const setSocialNotificationPreference = async (
     },
 
     update: {
-      muteNotifications,
+      notifyActivity,
     },
 
     create: {
       userId,
       targetUserId,
-      muteNotifications,
+      notifyActivity,
     },
   });
-};
-
-export const areSocialNotificationsMuted = async (
-  userId: string,
-  actorUserId: string,
-) => {
-  const preference = await getSocialPreference(
-    userId,
-    actorUserId,
-  );
-
-  return preference?.muteNotifications ?? false;
 };

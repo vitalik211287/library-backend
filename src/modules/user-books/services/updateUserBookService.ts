@@ -3,6 +3,8 @@ import type { Prisma, ProgressMode, ReadingStatus } from "@prisma/client";
 type DbClient = Prisma.TransactionClient | typeof prisma;
 
 import prisma from "../../../utils/prisma.js";
+
+import { createSocialActivityNotificationsService } from "../../notifications/services/notificationsService.js";
 import {
   createBookFinishedActivity,
   createReadingStartedActivity,
@@ -175,14 +177,34 @@ export const updateUserBookService = async (
     data.status === "READING" &&
     userBook?.status !== "READING"
   ) {
-    await createReadingStartedActivity(userId, bookId, db);
+    const activity = await createReadingStartedActivity(
+      userId,
+      bookId,
+      db,
+    );
+
+    await createSocialActivityNotificationsService({
+      actorUserId: userId,
+      activityId: activity.id,
+      bookId,
+    });
   }
 
   if (
     data.status === "FINISHED" &&
     userBook?.status !== "FINISHED"
   ) {
-    await createBookFinishedActivity(userId, bookId, db);
+    const activity = await createBookFinishedActivity(
+      userId,
+      bookId,
+      db,
+    );
+
+    await createSocialActivityNotificationsService({
+      actorUserId: userId,
+      activityId: activity.id,
+      bookId,
+    });
   }
 
   if (
@@ -192,12 +214,18 @@ export const updateUserBookService = async (
     if (data.rating === null) {
       await removeRatingAddedActivity(userId, bookId, db);
     } else {
-      await upsertRatingAddedActivity(
+      const activity = await upsertRatingAddedActivity(
         userId,
         bookId,
         data.rating,
         db,
       );
+
+      await createSocialActivityNotificationsService({
+        actorUserId: userId,
+        activityId: activity.id,
+        bookId,
+      });
     }
   }
   return updatedUserBook;

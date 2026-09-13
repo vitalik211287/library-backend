@@ -61,16 +61,16 @@ export const updateSocialPreferenceController = async (
       });
     }
 
-    if (typeof req.body?.muteNotifications !== "boolean") {
+    if (typeof req.body?.notifyActivity !== "boolean") {
       return res.status(400).json({
-        message: "muteNotifications must be boolean",
+        message: "notifyActivity must be boolean",
       });
     }
 
     const result = await updateSocialPreferenceService(
       currentUserId,
       userId,
-      req.body.muteNotifications,
+      req.body.notifyActivity,
     );
 
     return res.status(200).json(result);

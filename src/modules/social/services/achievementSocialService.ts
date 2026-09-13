@@ -1,4 +1,6 @@
-﻿import {
+import { createSocialActivityNotificationsService } from "../../notifications/services/notificationsService.js";
+
+import {
   getAchievementActivities,
   reconcileAchievementActivities,
 } from "../repositories/socialActivityRepository.js";
@@ -24,6 +26,14 @@ export const syncAchievementSocialActivitiesService = async (
     unlockedIds,
     viewerUserId,
   );
+
+  for (const activity of activities) {
+    await createSocialActivityNotificationsService({
+      actorUserId: userId,
+      activityId: activity.id,
+      bookId: null,
+    });
+  }
 
   return new Map(
     activities.map((activity) => [

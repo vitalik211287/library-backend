@@ -1,7 +1,8 @@
-import { areSocialNotificationsMuted } from "../../users/repositories/socialPreferencesRepository.js";
 import {
   createNotification,
   createLibraryNotifications,
+  createSocialActivityNotifications,
+  getSocialActivityNotificationRecipients,
   getNotifications,
   getUnreadNotificationsCount,
   markAllNotificationsAsRead,
@@ -18,15 +19,6 @@ export const createKudosNotificationService = async ({
   activityId: string;
 }) => {
   if (recipientUserId === actorUserId) {
-    return null;
-  }
-
-  const muted = await areSocialNotificationsMuted(
-    recipientUserId,
-    actorUserId,
-  );
-
-  if (muted) {
     return null;
   }
 
@@ -49,22 +41,12 @@ export const createNewFollowerNotificationService = async ({
     return null;
   }
 
-  const muted = await areSocialNotificationsMuted(
-    recipientUserId,
-    actorUserId,
-  );
-
-  if (muted) {
-    return null;
-  }
-
   return createNotification({
     userId: recipientUserId,
     actorId: actorUserId,
     type: "NEW_FOLLOWER",
   });
 };
-
 
 export const getNotificationsService = async (userId: string) => {
   return getNotifications(userId);
@@ -113,5 +95,32 @@ export const createLibraryBookAddedNotificationsService = async ({
     actorId: actorUserId,
     libraryId,
     bookId,
+  });
+};
+export const createSocialActivityNotificationsService = async ({
+  actorUserId,
+  activityId,
+  bookId,
+}: {
+  actorUserId: string;
+  activityId: string;
+  bookId?: string | null;
+}) => {
+  const recipients =
+    await getSocialActivityNotificationRecipients(actorUserId);
+
+  const recipientUserIds = [
+    ...new Set(
+      recipients
+        .map((item) => item.userId)
+        .filter((userId) => userId !== actorUserId),
+    ),
+  ];
+
+  return createSocialActivityNotifications({
+    recipientUserIds,
+    actorId: actorUserId,
+    activityId,
+    bookId: bookId ?? null,
   });
 };
