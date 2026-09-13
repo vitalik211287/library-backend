@@ -116,3 +116,52 @@ export const createLibraryNotifications = async (data: {
     })),
   });
 };
+
+export const getSocialActivityNotificationRecipients = async (
+  actorUserId: string,
+) => {
+  return prisma.userSocialPreference.findMany({
+    where: {
+      targetUserId: actorUserId,
+      notifyActivity: true,
+
+      user: {
+        following: {
+          some: {
+            followingId: actorUserId,
+          },
+        },
+      },
+    },
+
+    select: {
+      userId: true,
+    },
+  });
+};
+
+export const createSocialActivityNotifications = async (data: {
+  recipientUserIds: string[];
+  actorId: string;
+  activityId: string;
+  bookId?: string | null;
+}) => {
+  if (data.recipientUserIds.length === 0) {
+    return {
+      count: 0,
+    };
+  }
+
+  return prisma.notification.createMany({
+    data: data.recipientUserIds.map((userId) => ({
+      userId,
+      actorId: data.actorId,
+      type: "SOCIAL_ACTIVITY",
+      scope: "USER",
+      activityId: data.activityId,
+      bookId: data.bookId ?? null,
+    })),
+
+    skipDuplicates: true,
+  });
+};

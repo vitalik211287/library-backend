@@ -71,7 +71,7 @@ model UserSocialPreference {
   targetUserId String
   targetUser   User   @relation("SocialPreferenceTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
 
-  muteNotifications Boolean @default(false)
+  notifyActivity Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -349,6 +349,7 @@ enum NotificationType {
   KUDOS_RECEIVED
   NEW_FOLLOWER
   LIBRARY_BOOK_ADDED
+  SOCIAL_ACTIVITY
 }
 
 model SocialActivity {
@@ -368,7 +369,8 @@ model SocialActivity {
 
   createdAt DateTime @default(now())
 
-  kudos ActivityKudos[]
+  kudos         ActivityKudos[]
+  notifications Notification[]
 
   @@unique([userId, type, achievementId])
   @@unique([userId, type, bookId])
@@ -406,6 +408,7 @@ model Notification {
   scope NotificationScope @default(USER)
 
   activityId String?
+  activity   SocialActivity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
   bookId String?
   book   Book?   @relation(fields: [bookId], references: [id], onDelete: Cascade)
@@ -417,6 +420,7 @@ model Notification {
 
   createdAt DateTime @default(now())
 
+  @@unique([userId, actorId, type, activityId])
   @@index([userId, isRead, createdAt])
   @@index([actorId, createdAt])
   @@index([activityId])
