@@ -3,6 +3,7 @@ import type { Prisma, ProgressMode, ReadingStatus } from "@prisma/client";
 type DbClient = Prisma.TransactionClient | typeof prisma;
 
 import prisma from "../../../utils/prisma.js";
+import { createBookFinishedActivity } from "../../social/repositories/socialActivityRepository.js";
 
 import {
   getUserBook,

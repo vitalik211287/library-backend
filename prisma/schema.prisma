@@ -103,6 +103,7 @@ model Book {
   libraries         LibraryBook[]
   activityLogs      ActivityLog[]
   libraryBookEvents LibraryBookEvent[]
+  socialActivities  SocialActivity[]
   notifications     Notification[]
 }
 
@@ -336,7 +337,9 @@ model SocialActivity {
   type SocialActivityType
 
   achievementId String?
-  bookId        String?
+
+  bookId String?
+  book   Book?   @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 

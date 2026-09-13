@@ -1,4 +1,5 @@
-﻿import prisma from "../../../utils/prisma.js";
+import type { Prisma } from "@prisma/client";
+import prisma from "../../../utils/prisma.js";
 
 export const reconcileAchievementActivities = async (
   userId: string,
@@ -83,6 +84,20 @@ export const getAchievementActivities = async (
           kudos: true,
         },
       },
+    },
+  });
+};
+
+export const createBookFinishedActivity = async (
+  userId: string,
+  bookId: string,
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+) => {
+  return db.socialActivity.create({
+    data: {
+      userId,
+      bookId,
+      type: "BOOK_FINISHED",
     },
   });
 };

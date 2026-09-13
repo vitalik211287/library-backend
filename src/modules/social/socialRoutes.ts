@@ -1,6 +1,7 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 
 import { authMiddleware } from "../../middlewares/authMiddleware.js";
+import { getSocialFeedController } from "./controllers/socialFeedController.js";
 
 import {
   addActivityKudosController,
@@ -11,6 +12,8 @@ import {
 const socialRouter = Router();
 
 socialRouter.use(authMiddleware);
+
+socialRouter.get("/feed", getSocialFeedController);
 
 socialRouter.get(
   "/activities/:activityId/kudos",
@@ -24,7 +27,6 @@ socialRouter.post(
 socialRouter.delete(
   "/activities/:activityId/kudos",
   removeActivityKudosController,
-  getActivityKudosUsersController,
 );
 
 export default socialRouter;
