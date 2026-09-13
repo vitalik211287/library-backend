@@ -25,7 +25,7 @@ type Achievement = AchievementConfig & {
   unlocked: boolean;
 };
 
-const ACHIEVEMENTS: AchievementConfig[] = [
+export const ACHIEVEMENTS: AchievementConfig[] = [
   {
     id: "books-1",
     category: "books",

@@ -1,24 +1,41 @@
 import { getSocialFeed } from "../repositories/socialFeedRepository.js";
+import { ACHIEVEMENTS } from "../../stats/services/getUserAchievementsService.js";
 
 export const getSocialFeedService = async (
   currentUserId: string,
 ) => {
   const activities = await getSocialFeed(currentUserId);
 
-  return activities.map((activity) => ({
-    id: activity.id,
-    type: activity.type,
-    createdAt: activity.createdAt,
+  return activities.map((activity) => {
+    const achievement =
+      activity.type === "ACHIEVEMENT_UNLOCKED"
+        ? ACHIEVEMENTS.find(
+            (item) => item.id === activity.achievementId,
+          ) ?? null
+        : null;
 
-    user: activity.user,
+    return {
+      id: activity.id,
+      type: activity.type,
+      createdAt: activity.createdAt,
 
-    book: activity.book,
+      user: activity.user,
 
-    achievementId: activity.achievementId,
+      book: activity.book,
 
-    kudosCount: activity._count.kudos,
-    hasKudos: activity.kudos.length > 0,
+      achievement: achievement
+        ? {
+            id: achievement.id,
+            title: achievement.title,
+            description: achievement.description,
+            category: achievement.category,
+          }
+        : null,
 
-    isOwnActivity: activity.user.id === currentUserId,
-  }));
+      kudosCount: activity._count.kudos,
+      hasKudos: activity.kudos.length > 0,
+
+      isOwnActivity: activity.user.id === currentUserId,
+    };
+  });
 };
