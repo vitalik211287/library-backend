@@ -346,6 +346,7 @@ model SocialActivity {
   kudos ActivityKudos[]
 
   @@unique([userId, type, achievementId])
+  @@unique([userId, type, bookId])
   @@index([userId, createdAt])
   @@index([type, createdAt])
   @@index([bookId])

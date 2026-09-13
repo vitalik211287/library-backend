@@ -93,8 +93,18 @@ export const createBookFinishedActivity = async (
   bookId: string,
   db: Prisma.TransactionClient | typeof prisma = prisma,
 ) => {
-  return db.socialActivity.create({
-    data: {
+  return db.socialActivity.upsert({
+    where: {
+      userId_type_bookId: {
+        userId,
+        type: "BOOK_FINISHED",
+        bookId,
+      },
+    },
+
+    update: {},
+
+    create: {
       userId,
       bookId,
       type: "BOOK_FINISHED",

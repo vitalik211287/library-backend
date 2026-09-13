@@ -1,4 +1,8 @@
-import { getSocialFeed } from "../repositories/socialFeedRepository.js";
+import {
+  getAchievementUnlockBook,
+  getSocialFeed,
+} from "../repositories/socialFeedRepository.js";
+
 import { ACHIEVEMENTS } from "../../stats/services/getUserAchievementsService.js";
 
 export const getSocialFeedService = async (
@@ -6,36 +10,47 @@ export const getSocialFeedService = async (
 ) => {
   const activities = await getSocialFeed(currentUserId);
 
-  return activities.map((activity) => {
-    const achievement =
-      activity.type === "ACHIEVEMENT_UNLOCKED"
-        ? ACHIEVEMENTS.find(
-            (item) => item.id === activity.achievementId,
-          ) ?? null
-        : null;
+  return Promise.all(
+    activities.map(async (activity) => {
+      const achievement =
+        activity.type === "ACHIEVEMENT_UNLOCKED"
+          ? ACHIEVEMENTS.find(
+              (item) => item.id === activity.achievementId,
+            ) ?? null
+          : null;
 
-    return {
-      id: activity.id,
-      type: activity.type,
-      createdAt: activity.createdAt,
+      const achievementBook =
+        achievement?.category === "books"
+          ? await getAchievementUnlockBook(
+              activity.user.id,
+              achievement.target,
+            )
+          : null;
 
-      user: activity.user,
+      return {
+        id: activity.id,
+        type: activity.type,
+        createdAt: activity.createdAt,
 
-      book: activity.book,
+        user: activity.user,
 
-      achievement: achievement
-        ? {
-            id: achievement.id,
-            title: achievement.title,
-            description: achievement.description,
-            category: achievement.category,
-          }
-        : null,
+        book: activity.book,
 
-      kudosCount: activity._count.kudos,
-      hasKudos: activity.kudos.length > 0,
+        achievement: achievement
+          ? {
+              id: achievement.id,
+              title: achievement.title,
+              description: achievement.description,
+              category: achievement.category,
+              book: achievementBook,
+            }
+          : null,
 
-      isOwnActivity: activity.user.id === currentUserId,
-    };
-  });
+        kudosCount: activity._count.kudos,
+        hasKudos: activity.kudos.length > 0,
+
+        isOwnActivity: activity.user.id === currentUserId,
+      };
+    }),
+  );
 };

@@ -70,3 +70,41 @@ export const getSocialFeed = async (
     take: limit,
   });
 };
+export const getAchievementUnlockBook = async (
+  userId: string,
+  target: number,
+) => {
+  const item = await prisma.userBook.findFirst({
+    where: {
+      userId,
+      status: "FINISHED",
+      finishedAt: {
+        not: null,
+      },
+    },
+
+    orderBy: [
+      {
+        finishedAt: "asc",
+      },
+      {
+        createdAt: "asc",
+      },
+    ],
+
+    skip: Math.max(target - 1, 0),
+
+    select: {
+      book: {
+        select: {
+          id: true,
+          title: true,
+          author: true,
+          coverUrl: true,
+        },
+      },
+    },
+  });
+
+  return item?.book ?? null;
+};
