@@ -35,6 +35,7 @@ export const getSocialFeedService = async (
         user: activity.user,
 
         book: activity.book,
+        rating: activity.rating,
 
         achievement: achievement
           ? {

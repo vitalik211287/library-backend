@@ -27,6 +27,7 @@ export const getSocialFeed = async (
       type: true,
       achievementId: true,
       bookId: true,
+      rating: true,
       createdAt: true,
 
       user: {

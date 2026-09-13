@@ -111,3 +111,69 @@ export const createBookFinishedActivity = async (
     },
   });
 };
+
+export const createReadingStartedActivity = async (
+  userId: string,
+  bookId: string,
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+) => {
+  return db.socialActivity.upsert({
+    where: {
+      userId_type_bookId: {
+        userId,
+        type: "READING_STARTED",
+        bookId,
+      },
+    },
+
+    update: {},
+
+    create: {
+      userId,
+      bookId,
+      type: "READING_STARTED",
+    },
+  });
+};
+
+export const upsertRatingAddedActivity = async (
+  userId: string,
+  bookId: string,
+  rating: number,
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+) => {
+  return db.socialActivity.upsert({
+    where: {
+      userId_type_bookId: {
+        userId,
+        type: "RATING_ADDED",
+        bookId,
+      },
+    },
+
+    update: {
+      rating,
+    },
+
+    create: {
+      userId,
+      bookId,
+      type: "RATING_ADDED",
+      rating,
+    },
+  });
+};
+
+export const removeRatingAddedActivity = async (
+  userId: string,
+  bookId: string,
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+) => {
+  return db.socialActivity.deleteMany({
+    where: {
+      userId,
+      bookId,
+      type: "RATING_ADDED",
+    },
+  });
+};

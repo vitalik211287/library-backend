@@ -3,7 +3,12 @@ import type { Prisma, ProgressMode, ReadingStatus } from "@prisma/client";
 type DbClient = Prisma.TransactionClient | typeof prisma;
 
 import prisma from "../../../utils/prisma.js";
-import { createBookFinishedActivity } from "../../social/repositories/socialActivityRepository.js";
+import {
+  createBookFinishedActivity,
+  createReadingStartedActivity,
+  removeRatingAddedActivity,
+  upsertRatingAddedActivity,
+} from "../../social/repositories/socialActivityRepository.js";
 
 import {
   getUserBook,
@@ -161,5 +166,39 @@ export const updateUserBookService = async (
     });
   }
 
+
+  /* =========================
+     SOCIAL ACTIVITY
+  ========================= */
+
+  if (
+    data.status === "READING" &&
+    userBook?.status !== "READING"
+  ) {
+    await createReadingStartedActivity(userId, bookId, db);
+  }
+
+  if (
+    data.status === "FINISHED" &&
+    userBook?.status !== "FINISHED"
+  ) {
+    await createBookFinishedActivity(userId, bookId, db);
+  }
+
+  if (
+    data.rating !== undefined &&
+    data.rating !== userBook?.rating
+  ) {
+    if (data.rating === null) {
+      await removeRatingAddedActivity(userId, bookId, db);
+    } else {
+      await upsertRatingAddedActivity(
+        userId,
+        bookId,
+        data.rating,
+        db,
+      );
+    }
+  }
   return updatedUserBook;
 };

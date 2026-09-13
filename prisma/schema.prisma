@@ -314,7 +314,9 @@ model ActivityLog {
 
 enum SocialActivityType {
   ACHIEVEMENT_UNLOCKED
+  READING_STARTED
   BOOK_FINISHED
+  RATING_ADDED
 }
 
 enum NotificationScope {
@@ -340,6 +342,8 @@ model SocialActivity {
 
   bookId String?
   book   Book?   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  rating Int?
 
   createdAt DateTime @default(now())
 
