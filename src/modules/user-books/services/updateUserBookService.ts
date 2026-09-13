@@ -175,7 +175,7 @@ export const updateUserBookService = async (
 
   if (
     data.status === "READING" &&
-    userBook?.status !== "READING"
+    userBook?.status === "NOT_STARTED"
   ) {
     const activity = await createReadingStartedActivity(
       userId,
