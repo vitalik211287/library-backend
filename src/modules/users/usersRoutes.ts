@@ -1,6 +1,11 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 
 import { authMiddleware } from "../../middlewares/authMiddleware.js";
+
+import {
+  getSocialPreferenceController,
+  updateSocialPreferenceController,
+} from "./controllers/socialPreferencesController.js";
 
 import {
   followUserController,
@@ -32,6 +37,15 @@ usersRouter.get("/:userId/profile", getPublicUserProfileController);
 
 usersRouter.get("/:userId/achievements", getPublicUserAchievementsController);
 
+usersRouter.get(
+  "/:userId/social-preferences",
+  getSocialPreferenceController,
+);
+
+usersRouter.patch(
+  "/:userId/social-preferences",
+  updateSocialPreferenceController,
+);
 usersRouter.post("/:userId/follow", followUserController);
 
 usersRouter.delete("/:userId/follow", unfollowUserController);

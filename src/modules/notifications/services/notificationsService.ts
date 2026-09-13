@@ -1,3 +1,4 @@
+import { areSocialNotificationsMuted } from "../../users/repositories/socialPreferencesRepository.js";
 import {
   createNotification,
   createLibraryNotifications,
@@ -20,6 +21,15 @@ export const createKudosNotificationService = async ({
     return null;
   }
 
+  const muted = await areSocialNotificationsMuted(
+    recipientUserId,
+    actorUserId,
+  );
+
+  if (muted) {
+    return null;
+  }
+
   return createNotification({
     userId: recipientUserId,
     actorId: actorUserId,
@@ -36,6 +46,15 @@ export const createNewFollowerNotificationService = async ({
   actorUserId: string;
 }) => {
   if (recipientUserId === actorUserId) {
+    return null;
+  }
+
+  const muted = await areSocialNotificationsMuted(
+    recipientUserId,
+    actorUserId,
+  );
+
+  if (muted) {
     return null;
   }
 

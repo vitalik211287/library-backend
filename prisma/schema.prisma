@@ -55,8 +55,29 @@ model User {
   socialActivities   SocialActivity[]
   activityKudosGiven ActivityKudos[]
 
+  socialPreferencesOwned    UserSocialPreference[] @relation("SocialPreferenceOwner")
+  socialPreferencesTargeted UserSocialPreference[] @relation("SocialPreferenceTarget")
+
   notificationsReceived Notification[] @relation("NotificationRecipient")
   notificationsSent     Notification[] @relation("NotificationActor")
+}
+
+model UserSocialPreference {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation("SocialPreferenceOwner", fields: [userId], references: [id], onDelete: Cascade)
+
+  targetUserId String
+  targetUser   User   @relation("SocialPreferenceTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  muteNotifications Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, targetUserId])
+  @@index([targetUserId])
 }
 
 model Follow {
