@@ -1,3 +1,4 @@
+import { ACHIEVEMENTS } from "../../stats/services/getUserAchievementsService.js";
 import {
   createNotification,
   createLibraryNotifications,
@@ -49,7 +50,30 @@ export const createNewFollowerNotificationService = async ({
 };
 
 export const getNotificationsService = async (userId: string) => {
-  return getNotifications(userId);
+  const notifications = await getNotifications(userId);
+
+  return notifications.map((notification) => {
+    const achievement =
+      notification.type === "SOCIAL_ACTIVITY" &&
+      notification.activity?.type === "ACHIEVEMENT_UNLOCKED"
+        ? ACHIEVEMENTS.find(
+            (item) =>
+              item.id === notification.activity?.achievementId,
+          ) ?? null
+        : null;
+
+    return {
+      ...notification,
+
+      achievement: achievement
+        ? {
+            id: achievement.id,
+            title: achievement.title,
+            description: achievement.description,
+          }
+        : null,
+    };
+  });
 };
 
 export const getUnreadNotificationsCountService = async (

@@ -26,6 +26,16 @@ export const getNotifications = async (userId: string) => {
       id: true,
       type: true,
       activityId: true,
+
+      activity: {
+        select: {
+          id: true,
+          type: true,
+          rating: true,
+          achievementId: true,
+        },
+      },
+
       isRead: true,
       createdAt: true,
 
