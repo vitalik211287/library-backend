@@ -43,6 +43,7 @@ const parseYear = (text: string): number | null => {
 const parsePages = (text: string): number | null => {
   const patterns = [
     /(?:Кількість сторінок|Сторінок|Сторінки|Количество страниц|Страниц|Pages)\s*[:.\-]?\s*(\d{2,4})/i,
+    /Page Count\s*[:.\-]?\s*(\d{2,4})/i,
     /(\d{2,4})\s*pages\b/i,
   ];
 
@@ -209,5 +210,6 @@ export const enrichBookViaSerper = async (
     genre,
   };
 };
+
 
 
