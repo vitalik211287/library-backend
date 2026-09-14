@@ -90,6 +90,32 @@ const extractAuthorFromSnippet = (snippet: string | undefined) => {
   return match?.[1]?.trim() ?? null;
 };
 
+const isTechnicalSnippet = (
+  snippet: string | undefined,
+) => {
+  if (!snippet) {
+    return false;
+  }
+
+  const technicalMarkers = [
+    "ISBN",
+    "\u0424\u043e\u0440\u043c\u0430\u0442",
+    "\u0412\u0430\u0433\u0430",
+    "\u041f\u0430\u043f\u0456\u0440",
+    "\u041a\u043e\u0434",
+    "\u0420\u043e\u0437\u043c\u0456\u0440",
+  ];
+
+  const matches = technicalMarkers.filter(
+    (marker) =>
+      snippet
+        .toLowerCase()
+        .includes(marker.toLowerCase()),
+  ).length;
+
+  return matches >= 2;
+};
+
 const extractIsbnFromSnippet = (snippet: string | undefined) => {
   if (!snippet) {
     return null;
@@ -181,7 +207,11 @@ export const getBookFromYakabooSearch = async (
     pages: null,
     language: null,
     genre: null,
-    description: yakabooResult.snippet ?? null,
+    description: isTechnicalSnippet(
+      yakabooResult.snippet,
+    )
+      ? null
+      : yakabooResult.snippet ?? null,
     coverUrl: null,
     sourceUrl,
   };
