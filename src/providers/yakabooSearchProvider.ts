@@ -49,23 +49,34 @@ const parseTitleAndAuthor = (searchTitle: string | undefined) => {
 
   const normalized = searchTitle.replace(/\s+/g, " ").trim();
 
-  const truncatedYakabooTitle = normalized.match(/^Книга\s+[«"](.+)$/i);
+  const authorBeforeTitle = normalized.match(
+    /^(.+?)\s*(?:-|–|—)\s*Книга\s+[«"](.+?)(?:[»"]|$)/i,
+  );
 
-  if (truncatedYakabooTitle) {
+  if (authorBeforeTitle) {
     return {
-      title: truncatedYakabooTitle[1]?.trim() ?? null,
-      author: null,
+      title: authorBeforeTitle[2]?.trim() ?? null,
+      author: authorBeforeTitle[1]?.trim() ?? null,
     };
   }
 
-  const match = normalized.match(
-    /Книга\s+[«"](.+?)[»"]\s*[–—-]\s*(.+?)(?:,\s*\.\.\.|\.{3}|$)/i,
+  const titleBeforeAuthor = normalized.match(
+    /Книга\s+[«"](.+?)[»"]\s*(?:-|–|—)\s*(.+?)(?:,\s*\.\.\.|\.{3}|$)/i,
   );
 
-  if (match) {
+  if (titleBeforeAuthor) {
     return {
-      title: match[1]?.trim() ?? null,
-      author: match[2]?.trim() ?? null,
+      title: titleBeforeAuthor[1]?.trim() ?? null,
+      author: titleBeforeAuthor[2]?.trim() ?? null,
+    };
+  }
+
+  const truncatedTitle = normalized.match(/^Книга\s+[«"](.+)$/i);
+
+  if (truncatedTitle) {
+    return {
+      title: truncatedTitle[1]?.trim() ?? null,
+      author: null,
     };
   }
 
