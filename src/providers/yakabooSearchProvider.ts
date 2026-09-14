@@ -10,8 +10,7 @@ type SerperResponse = {
   organic?: SerperOrganicResult[];
 };
 
-const normalizeIsbn = (value: string) =>
-  value.replace(/[^0-9X]/gi, "");
+const normalizeIsbn = (value: string) => value.replace(/[^0-9X]/gi, "");
 
 const formatIsbn13 = (isbn: string) => {
   const normalized = normalizeIsbn(isbn);
@@ -20,7 +19,15 @@ const formatIsbn13 = (isbn: string) => {
     return normalized;
   }
 
-  return `${normalized.slice(0, 3)}-${normalized.slice(3, 6)}-${normalized.slice(6, 8)}-${normalized.slice(8, 12)}-${normalized.slice(12)}`;
+  if (normalized.startsWith("978966")) {
+    return `${normalized.slice(0, 3)}-${normalized.slice(3, 6)}-${normalized.slice(6, 9)}-${normalized.slice(9, 12)}-${normalized.slice(12)}`;
+  }
+
+  if (normalized.startsWith("978617")) {
+    return `${normalized.slice(0, 3)}-${normalized.slice(3, 6)}-${normalized.slice(6, 9)}-${normalized.slice(9, 12)}-${normalized.slice(12)}`;
+  }
+
+  return normalized;
 };
 
 const cleanYakabooUrl = (value: string) => {
@@ -32,9 +39,7 @@ const cleanYakabooUrl = (value: string) => {
   return url.href;
 };
 
-const parseTitleAndAuthor = (
-  searchTitle: string | undefined,
-) => {
+const parseTitleAndAuthor = (searchTitle: string | undefined) => {
   if (!searchTitle) {
     return {
       title: null,
@@ -42,9 +47,16 @@ const parseTitleAndAuthor = (
     };
   }
 
-  const normalized = searchTitle
-    .replace(/\s+/g, " ")
-    .trim();
+  const normalized = searchTitle.replace(/\s+/g, " ").trim();
+
+  const truncatedYakabooTitle = normalized.match(/^Книга\s+[«"](.+)$/i);
+
+  if (truncatedYakabooTitle) {
+    return {
+      title: truncatedYakabooTitle[1]?.trim() ?? null,
+      author: null,
+    };
+  }
 
   const match = normalized.match(
     /Книга\s+[«"](.+?)[»"]\s*[–—-]\s*(.+?)(?:,\s*\.\.\.|\.{3}|$)/i,
@@ -57,160 +69,108 @@ const parseTitleAndAuthor = (
     };
   }
 
-  const quotedTitle = normalized.match(
-    /[«"](.+?)[»"]/,
-  );
+  const quotedTitle = normalized.match(/[«"](.+?)[»"]/);
 
   return {
     title:
       quotedTitle?.[1]?.trim() ??
-      normalized
-        .replace(/\s*[|–—-]\s*Yakaboo.*$/i, "")
-        .trim() ??
+      normalized.replace(/\s*[|–—-]\s*Yakaboo.*$/i, "").trim() ??
       null,
     author: null,
   };
 };
 
-const extractAuthorFromSnippet = (
-  snippet: string | undefined,
-) => {
+const extractAuthorFromSnippet = (snippet: string | undefined) => {
   if (!snippet) {
     return null;
   }
 
-  const match = snippet.match(
-    /автор\s*[–—-]\s*([^,.;]+)/i,
-  );
+  const match = snippet.match(/автор\s*[–—-]\s*([^,.;]+)/i);
 
   return match?.[1]?.trim() ?? null;
 };
 
-const extractIsbnFromSnippet = (
-  snippet: string | undefined,
-) => {
+const extractIsbnFromSnippet = (snippet: string | undefined) => {
   if (!snippet) {
     return null;
   }
 
-  const match = snippet.match(
-    /97[89][\d\s-]{10,20}\d/,
-  );
+  const match = snippet.match(/97[89][\d\s-]{10,20}\d/);
 
-  return match
-    ? normalizeIsbn(match[0])
-    : null;
+  return match ? normalizeIsbn(match[0]) : null;
 };
 
 export const getBookFromYakabooSearch = async (
   isbn: string,
 ): Promise<ProviderBook> => {
-  console.log(
-    "🔎 YAKABOO SEARCH PROVIDER START:",
-    isbn,
-  );
+  console.log("🔎 YAKABOO SEARCH PROVIDER START:", isbn);
 
   const apiKey = process.env.SERPER_API_KEY;
 
   if (!apiKey) {
-    throw new Error(
-      "SERPER_API_KEY is not configured",
-    );
+    throw new Error("SERPER_API_KEY is not configured");
   }
 
   const normalizedIsbn = normalizeIsbn(isbn);
   const formattedIsbn = formatIsbn13(isbn);
 
-  const response = await fetch(
-    "https://google.serper.dev/search",
-    {
-      method: "POST",
-      headers: {
-        "X-API-KEY": apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        q: `"${formattedIsbn}" Yakaboo`,
-        gl: "ua",
-        hl: "uk",
-      }),
+  const response = await fetch("https://google.serper.dev/search", {
+    method: "POST",
+    headers: {
+      "X-API-KEY": apiKey,
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify({
+      q: `"${formattedIsbn}" Yakaboo`,
+      gl: "ua",
+      hl: "uk",
+    }),
+  });
 
   if (!response.ok) {
-    throw new Error(
-      `Serper search failed: ${response.status}`,
-    );
+    throw new Error(`Serper search failed: ${response.status}`);
   }
 
-  const data =
-    (await response.json()) as SerperResponse;
+  const data = (await response.json()) as SerperResponse;
 
-  const yakabooResult = data.organic?.find(
-    (result) => {
-      if (!result.link) {
-        return false;
-      }
+  const yakabooResult = data.organic?.find((result) => {
+    if (!result.link) {
+      return false;
+    }
 
-      try {
-        const url = new URL(result.link);
+    try {
+      const url = new URL(result.link);
 
-        return (
-          url.hostname === "yakaboo.ua" ||
-          url.hostname === "www.yakaboo.ua"
-        );
-      } catch {
-        return false;
-      }
-    },
-  );
+      return url.hostname === "yakaboo.ua" || url.hostname === "www.yakaboo.ua";
+    } catch {
+      return false;
+    }
+  });
 
   if (!yakabooResult?.link) {
-    throw new Error(
-      `Book with ISBN ${isbn} not found on Yakaboo via Serper`,
-    );
+    throw new Error(`Book with ISBN ${isbn} not found on Yakaboo via Serper`);
   }
 
-  const snippetIsbn =
-    extractIsbnFromSnippet(
-      yakabooResult.snippet,
-    );
+  const snippetIsbn = extractIsbnFromSnippet(yakabooResult.snippet);
 
-  if (
-    snippetIsbn &&
-    snippetIsbn !== normalizedIsbn
-  ) {
+  if (snippetIsbn && snippetIsbn !== normalizedIsbn) {
     throw new Error(
       `Yakaboo ISBN mismatch: expected ${normalizedIsbn}, got ${snippetIsbn}`,
     );
   }
 
-  const parsed =
-    parseTitleAndAuthor(
-      yakabooResult.title,
-    );
+  const parsed = parseTitleAndAuthor(yakabooResult.title);
 
   const author =
-    parsed.author ??
-    extractAuthorFromSnippet(
-      yakabooResult.snippet,
-    );
+    parsed.author ?? extractAuthorFromSnippet(yakabooResult.snippet);
 
   if (!parsed.title) {
-    throw new Error(
-      `Yakaboo title missing for ISBN ${isbn}`,
-    );
+    throw new Error(`Yakaboo title missing for ISBN ${isbn}`);
   }
 
-  const sourceUrl =
-    cleanYakabooUrl(
-      yakabooResult.link,
-    );
+  const sourceUrl = cleanYakabooUrl(yakabooResult.link);
 
-  console.log(
-    "✅ YAKABOO SEARCH BOOK FOUND:",
-    parsed.title,
-  );
+  console.log("✅ YAKABOO SEARCH BOOK FOUND:", parsed.title);
 
   return {
     isbn: snippetIsbn ?? normalizedIsbn,
@@ -221,8 +181,7 @@ export const getBookFromYakabooSearch = async (
     pages: null,
     language: null,
     genre: null,
-    description:
-      yakabooResult.snippet ?? null,
+    description: yakabooResult.snippet ?? null,
     coverUrl: null,
     sourceUrl,
   };
