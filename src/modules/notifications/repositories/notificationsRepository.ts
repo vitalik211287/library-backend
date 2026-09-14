@@ -6,12 +6,37 @@ export const createNotification = async (data: {
   type: "KUDOS_RECEIVED" | "NEW_FOLLOWER";
   activityId?: string | null;
 }) => {
+  if (data.activityId) {
+    return prisma.notification.upsert({
+      where: {
+        userId_actorId_type_activityId: {
+          userId: data.userId,
+          actorId: data.actorId,
+          type: data.type,
+          activityId: data.activityId,
+        },
+      },
+
+      update: {
+        isRead: false,
+        createdAt: new Date(),
+      },
+
+      create: {
+        userId: data.userId,
+        actorId: data.actorId,
+        type: data.type,
+        activityId: data.activityId,
+      },
+    });
+  }
+
   return prisma.notification.create({
     data: {
       userId: data.userId,
       actorId: data.actorId,
       type: data.type,
-      activityId: data.activityId ?? null,
+      activityId: null,
     },
   });
 };
