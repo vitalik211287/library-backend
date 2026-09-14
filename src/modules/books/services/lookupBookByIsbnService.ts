@@ -82,6 +82,12 @@ export const lookupBookByIsbnService = async (
         enrichedBook = await enrichBookViaSerper(enrichedBook);
       }
 
+      if (provider.name === "google-books") {
+        enrichedBook = await enrichBookViaSerper(enrichedBook, {
+          overrideEditionFields: true,
+        });
+      }
+
       return {
         ...enrichedBook,
         source: provider.name,
