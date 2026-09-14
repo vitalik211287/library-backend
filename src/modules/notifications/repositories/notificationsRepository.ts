@@ -58,6 +58,15 @@ export const getNotifications = async (userId: string) => {
           type: true,
           rating: true,
           achievementId: true,
+
+          book: {
+            select: {
+              id: true,
+              title: true,
+              author: true,
+              coverUrl: true,
+            },
+          },
         },
       },
 
