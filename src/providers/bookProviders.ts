@@ -3,6 +3,7 @@ import { getBookFromKnigoland } from "./knigolandProvider.js";
 import { getBookFromBookish } from "./bookishProvider.js";
 import { getBookFromBookYe } from "./bookYeProvider.js";
 import { getBookFromGoogleBooks } from "./googleBooksProvider.js";
+import { getBookFromYakabooSearch } from "./yakabooSearchProvider.js";
 
 import type { BookProvider } from "../types/providerBook.js";
 
@@ -27,6 +28,8 @@ export const bookProviders: BookProvider[] = [
     name: "google-books",
     getBook: getBookFromGoogleBooks,
   },
+  {
+    name: "yakaboo-search",
+    getBook: getBookFromYakabooSearch,
+  },
 ];
-
-
