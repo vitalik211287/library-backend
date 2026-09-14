@@ -90,9 +90,7 @@ const extractAuthorFromSnippet = (snippet: string | undefined) => {
   return match?.[1]?.trim() ?? null;
 };
 
-const isTechnicalSnippet = (
-  snippet: string | undefined,
-) => {
+const isTechnicalSnippet = (snippet: string | undefined) => {
   if (!snippet) {
     return false;
   }
@@ -106,11 +104,8 @@ const isTechnicalSnippet = (
     "\u0420\u043e\u0437\u043c\u0456\u0440",
   ];
 
-  const matches = technicalMarkers.filter(
-    (marker) =>
-      snippet
-        .toLowerCase()
-        .includes(marker.toLowerCase()),
+  const matches = technicalMarkers.filter((marker) =>
+    snippet.toLowerCase().includes(marker.toLowerCase()),
   ).length;
 
   return matches >= 2;
@@ -196,6 +191,64 @@ export const getBookFromYakabooSearch = async (
 
   const sourceUrl = cleanYakabooUrl(yakabooResult.link);
 
+  let description = isTechnicalSnippet(yakabooResult.snippet)
+    ? null
+    : (yakabooResult.snippet ?? null);
+
+  if (!description) {
+    try {
+      const pageUrl = new URL(sourceUrl);
+
+      const slug = pageUrl.pathname
+        .split("/")
+        .filter(Boolean)
+        .pop()
+        ?.replace(/\.html$/i, "");
+
+      if (slug) {
+        const descriptionResponse = await fetch(
+          "https://google.serper.dev/search",
+          {
+            method: "POST",
+            headers: {
+              "X-API-KEY": apiKey,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              q: slug,
+              gl: "ua",
+              hl: "uk",
+              num: 10,
+            }),
+          },
+        );
+
+        if (descriptionResponse.ok) {
+          const descriptionData =
+            (await descriptionResponse.json()) as SerperResponse;
+
+          const samePage = descriptionData.organic?.find((result) => {
+            if (!result.link) {
+              return false;
+            }
+
+            try {
+              return cleanYakabooUrl(result.link) === sourceUrl;
+            } catch {
+              return false;
+            }
+          });
+
+          if (samePage?.snippet && !isTechnicalSnippet(samePage.snippet)) {
+            description = samePage.snippet;
+          }
+        }
+      }
+    } catch (error) {
+      console.log("⚪ Yakaboo description enrichment failed:", error);
+    }
+  }
+
   console.log("✅ YAKABOO SEARCH BOOK FOUND:", parsed.title);
 
   return {
@@ -207,11 +260,7 @@ export const getBookFromYakabooSearch = async (
     pages: null,
     language: null,
     genre: null,
-    description: isTechnicalSnippet(
-      yakabooResult.snippet,
-    )
-      ? null
-      : yakabooResult.snippet ?? null,
+    description,
     coverUrl: null,
     sourceUrl,
   };
