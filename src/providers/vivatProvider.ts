@@ -184,6 +184,35 @@ export const getBookFromVivat = async (
     );
   };
 
+  const getCharacteristicByLabel = (
+    label: string,
+  ): string | null => {
+    return (
+      characteristics.find(
+        (characteristic) =>
+          characteristic.label.trim().toLowerCase() ===
+          label.trim().toLowerCase(),
+      )?.value?.[0]?.text ?? null
+    );
+  };
+
+  const pageIsbn = getCharacteristicByLabel("ISBN");
+
+  const normalizedRequestedIsbn = isbn.replace(/[^0-9X]/gi, "");
+  const normalizedPageIsbn =
+    pageIsbn?.replace(/[^0-9X]/gi, "") ?? "";
+
+  if (
+    !normalizedPageIsbn ||
+    normalizedPageIsbn !== normalizedRequestedIsbn
+  ) {
+    throw new Error(
+      `Vivat ISBN mismatch: requested ${normalizedRequestedIsbn}, got ${
+        normalizedPageIsbn || "missing"
+      }`,
+    );
+  }
+
   const author = getCharacteristic(
     "author_code_entityelement",
   );
