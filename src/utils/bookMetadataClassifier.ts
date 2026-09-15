@@ -5,313 +5,242 @@ type BookMetadataInput = {
   description?: string | null;
 };
 
-type TagRule = {
-  tag: string;
+type GenreRule = {
+  tags: string[];
   keywords: string[];
 };
 
-const TAG_RULES: TagRule[] = [
+const GENRE_RULES: GenreRule[] = [
   {
-    tag: "science-fiction",
+    tags: ["science-fiction"],
     keywords: [
-      // EN
       "science fiction",
       "science-fiction",
       "sci-fi",
       "sci fi",
-
-      // UA
       "наукова фантастика",
       "науково-фантастична",
       "науково фантастична",
-      "фантастика",
-
-      // RU
       "научная фантастика",
       "научно-фантастическая",
       "научно фантастическая",
-      "фантастическая литература",
+      "фантастика про космос",
     ],
   },
 
   {
-    tag: "fantasy",
+    tags: ["children", "fantasy"],
     keywords: [
-      // EN
-      "fantasy",
-
-      // UA
-      "фентезі",
-      "фетезі",
-
-      // RU
-      "фэнтези",
+      "дитяча фантастика",
+      "дитяче фентезі",
+      "дитячий фентезі",
+      "підліткове фентезі",
+      "детская фантастика",
+      "детское фэнтези",
+      "подростковое фэнтези",
+      "children fantasy",
+      "children's fantasy",
+      "young adult fantasy",
     ],
   },
 
   {
-    tag: "detective",
-    keywords: [
-      // EN
-      "detective",
+    tags: ["fantasy"],
+    keywords: ["фентезі", "фетезі", "фэнтези", "fantasy"],
+  },
 
-      // UA / RU
+  {
+    tags: ["children", "detective"],
+    keywords: [
+      "дитячий детектив",
+      "дитячі детективи",
+      "детский детектив",
+      "детские детективы",
+      "children detective",
+    ],
+  },
+
+  {
+    tags: ["detective"],
+    keywords: [
       "детектив",
       "детективи",
       "детективы",
+      "detective",
+      "crime fiction",
     ],
   },
 
   {
-    tag: "thriller",
+    tags: ["thriller"],
     keywords: [
-      // EN
-      "thriller",
-
-      // UA
       "трилер",
       "трилери",
-
-      // RU
       "триллер",
       "триллеры",
+      "thriller",
+      "thrillers",
     ],
   },
 
   {
-    tag: "history",
+    tags: ["history"],
     keywords: [
-      // EN
-      "history",
-      "historical",
-
-      // UA
-      "історія",
-      "історичний",
-      "історична",
-      "історичні",
-
-      // RU
-      "история",
-      "исторический",
-      "историческая",
-      "исторические",
+      "історичний роман",
+      "історичні романи",
+      "історична проза",
+      "исторический роман",
+      "исторические романы",
+      "historical fiction",
+      "historical novel",
     ],
   },
 
   {
-    tag: "biography",
+    tags: ["biography"],
     keywords: [
-      // EN
-      "biography",
-      "biographical",
-      "memoir",
-
-      // UA
       "біографія",
+      "біографії",
       "автобіографія",
       "мемуари",
-
-      // RU
       "биография",
+      "биографии",
       "автобиография",
       "мемуары",
+      "biography",
+      "autobiography",
+      "memoir",
+      "memoirs",
     ],
   },
 
   {
-    tag: "psychology",
+    tags: ["psychology"],
     keywords: [
-      // EN
-      "psychology",
-
-      // UA
       "психологія",
-      "психологічний",
-      "психологічна",
-
-      // RU
+      "психологічна література",
       "психология",
-      "психологический",
-      "психологическая",
+      "психологическая литература",
+      "psychology",
     ],
   },
 
   {
-    tag: "popular-science",
+    tags: ["popular-science"],
     keywords: [
-      // EN
-      "popular science",
-
-      // UA
-      "науково-популярний",
       "науково-популярна",
-      "науково популярний",
+      "науково-популярний",
       "науково популярна",
-
-      // RU
-      "научно-популярный",
+      "науково популярний",
       "научно-популярная",
-      "научно популярный",
+      "научно-популярный",
       "научно популярная",
+      "научно популярный",
+      "popular science",
     ],
   },
 
   {
-    tag: "educational",
+    tags: ["educational"],
     keywords: [
-      // EN
-      "textbook",
-      "educational",
-
-      // UA
-      "підручник",
-      "посібник",
+      "навчальна література",
       "навчальний",
       "навчальна",
-      "навчальна література",
-      "учбовий",
       "учбова",
-
-      // RU
-      "учебник",
-      "учебное пособие",
+      "учбовий",
+      "підручник",
+      "посібник",
       "учебная литература",
       "учебный",
       "учебная",
+      "учебник",
+      "учебное пособие",
+      "textbook",
+      "educational",
     ],
   },
 
   {
-    tag: "children",
+    tags: ["children"],
     keywords: [
-      // EN
-      "children",
-      "kids",
-
-      // UA
+      "дитяча література",
+      "дитяча проза",
+      "дитячі енциклопедії",
+      "дитячий",
       "дитяча",
-      "дитячі",
-      "для дітей",
-      "казка",
       "казки",
-
-      // RU
+      "казка",
+      "детская литература",
+      "детская проза",
+      "детские энциклопедии",
+      "детский",
       "детская",
-      "детские",
-      "для детей",
-      "сказка",
       "сказки",
+      "сказка",
+      "children",
+      "children's literature",
+      "kids",
     ],
   },
 
   {
-    tag: "adventure",
+    tags: ["adventure"],
     keywords: [
-      // EN
+      "пригоди",
+      "пригодницька література",
+      "пригодницький роман",
+      "приключения",
+      "приключенческая литература",
+      "приключенческий роман",
       "adventure",
       "adventures",
-
-      // UA
-      "пригода",
-      "пригоди",
-      "пригодницький",
-      "пригодницька",
-
-      // RU
-      "приключение",
-      "приключения",
-      "приключенческий",
-      "приключенческая",
     ],
   },
 
   {
-    tag: "space",
+    tags: ["cooking"],
     keywords: [
-      // EN
-      "space",
-      "spaceship",
-      "planet",
-      "galaxy",
-
-      // UA
-      "космос",
-      "космічний",
-      "космічна",
-      "космічному",
-      "планета",
-      "галактика",
-
-      // RU
-      "космический",
-      "космическая",
-      "космическом",
-      "планета",
-      "галактика",
+      "кулінарія",
+      "кулінарна література",
+      "кулинария",
+      "кулинарная литература",
+      "cooking",
+      "cookbook",
     ],
   },
 
   {
-    tag: "humor",
+    tags: ["philosophy"],
     keywords: [
-      // EN
+      "філософія",
+      "філософська література",
+      "философия",
+      "философская литература",
+      "philosophy",
+    ],
+  },
+
+  {
+    tags: ["humor"],
+    keywords: [
+      "гумор",
+      "гумористична література",
+      "юмор",
+      "юмористическая литература",
       "humor",
       "humour",
       "comedy",
-
-      // UA
-      "гумор",
-      "комедія",
-      "смішний",
-      "гумористичний",
-
-      // RU
-      "юмор",
-      "комедия",
-      "смешной",
-      "юмористический",
     ],
   },
 
   {
-    tag: "cooking",
+    tags: ["space"],
     keywords: [
-      // EN
-      "cooking",
-      "cookbook",
-      "recipe",
-      "recipes",
-
-      // UA
-      "кулінарія",
-      "кулінарний",
-      "рецепт",
-      "рецепти",
-
-      // RU
-      "кулинария",
-      "кулинарный",
-      "рецепт",
-      "рецепты",
-    ],
-  },
-
-  {
-    tag: "philosophy",
-    keywords: [
-      // EN
-      "philosophy",
-
-      // UA
-      "філософія",
-      "філософський",
-      "філософська",
-
-      // RU
-      "философия",
-      "философский",
-      "философская",
+      "космічна фантастика",
+      "фантастика про космос",
+      "космическая фантастика",
+      "space fiction",
+      "space opera",
     ],
   },
 ];
@@ -324,17 +253,23 @@ const normalizeText = (value: string): string =>
     .trim();
 
 export const classifyBookMetadata = (book: BookMetadataInput): string[] => {
-  const searchableText = normalizeText(
-    [book.title, book.author, book.genre, book.description]
-      .filter((value): value is string => Boolean(value))
-      .join(" "),
-  );
+  const genre = normalizeText(book.genre ?? "");
 
-  if (!searchableText) {
+  if (!genre) {
     return [];
   }
 
-  return TAG_RULES.filter(({ keywords }) =>
-    keywords.some((keyword) => searchableText.includes(normalizeText(keyword))),
-  ).map(({ tag }) => tag);
+  const tags = new Set<string>();
+
+  for (const rule of GENRE_RULES) {
+    const matched = rule.keywords.some((keyword) =>
+      genre.includes(normalizeText(keyword)),
+    );
+
+    if (matched) {
+      rule.tags.forEach((tag) => tags.add(tag));
+    }
+  }
+
+  return Array.from(tags).sort();
 };
