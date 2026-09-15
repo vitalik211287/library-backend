@@ -1,4 +1,4 @@
-import type { LibraryRole, Prisma } from "@prisma/client";
+﻿import type { LibraryRole, Prisma } from "@prisma/client";
 
 import {
   addLibraryMember,
@@ -26,6 +26,7 @@ import { getUserByEmail } from "../../users/repositories/usersRepository.js";
 
 import { buildEffectiveBook } from "../../../utils/effectiveBook.js";
 import { classifyBookMetadata } from "../../../utils/bookMetadataClassifier.js";
+import { enrichBookMetadata } from "../../books/services/bookMetadataEnrichmentService.js";
 import prisma from "../../../utils/prisma.js";
 
 import { createLibraryBookAddedNotificationsService } from "../../notifications/services/notificationsService.js";
@@ -379,9 +380,9 @@ export const addBookToLibraryService = async (
   );
 
   /*
-   * Глобальна Book вже існує.
-   * Створюємо тільки LibraryBook
-   * з даними конкретної бібліотеки.
+   * Р“Р»РѕР±Р°Р»СЊРЅР° Book РІР¶Рµ С–СЃРЅСѓС”.
+   * РЎС‚РІРѕСЂСЋС”РјРѕ С‚С–Р»СЊРєРё LibraryBook
+   * Р· РґР°РЅРёРјРё РєРѕРЅРєСЂРµС‚РЅРѕС— Р±С–Р±Р»С–РѕС‚РµРєРё.
    */
   if (existingBook) {
     const libraryBook = await prisma.$transaction(async (tx) => {
@@ -455,10 +456,20 @@ export const addBookToLibraryService = async (
   }
 
   /*
-   * Глобальної Book ще немає.
-   * Створюємо Book + LibraryBook.
+   * Р“Р»РѕР±Р°Р»СЊРЅРѕС— Book С‰Рµ РЅРµРјР°С”.
+   * РЎС‚РІРѕСЂСЋС”РјРѕ Book + LibraryBook.
    */
-  const tags = classifyBookMetadata(data);
+  const genreTags = classifyBookMetadata(data);
+
+  const enrichment = await enrichBookMetadata({
+    title: data.title,
+    author: data.author,
+    genre: data.genre,
+    description: data.description,
+    tags: genreTags,
+  });
+
+  const tags = enrichment.tags;
 
   const book = await createBookInLibrary(
     libraryId,
@@ -471,10 +482,10 @@ export const addBookToLibraryService = async (
   );
 
   /*
-   * Беремо щойно створений
-   * LibraryBook назад із БД,
-   * щоб EffectiveBook завжди
-   * складався одним mapper-ом.
+   * Р‘РµСЂРµРјРѕ С‰РѕР№РЅРѕ СЃС‚РІРѕСЂРµРЅРёР№
+   * LibraryBook РЅР°Р·Р°Рґ С–Р· Р‘Р”,
+   * С‰РѕР± EffectiveBook Р·Р°РІР¶РґРё
+   * СЃРєР»Р°РґР°РІСЃСЏ РѕРґРЅРёРј mapper-РѕРј.
    */
   const libraryBook = await getLibraryBook(libraryId, book.id);
 

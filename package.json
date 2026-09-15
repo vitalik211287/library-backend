@@ -27,6 +27,7 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "multer-storage-cloudinary": "^4.0.0",
+    "openai": "^7.15.0",
     "pg": "^8.23.0",
     "playwright": "^1.62.1",
     "prisma": "^7.9.1",
