@@ -331,30 +331,19 @@ export const updateLibraryBookCover = async (
   bookId: string,
   coverUrl: string,
 ) => {
-  return prisma.$transaction(async (tx) => {
-    await tx.book.update({
-      where: {
-        id: bookId,
+  return prisma.libraryBook.update({
+    where: {
+      libraryId_bookId: {
+        libraryId,
+        bookId,
       },
-      data: {
-        coverUrl,
-      },
-    });
-
-    return tx.libraryBook.update({
-      where: {
-        libraryId_bookId: {
-          libraryId,
-          bookId,
-        },
-      },
-      data: {
-        coverUrl,
-      },
-      include: {
-        book: true,
-      },
-    });
+    },
+    data: {
+      coverUrl,
+    },
+    include: {
+      book: true,
+    },
   });
 };
 
@@ -400,15 +389,11 @@ export const createBookInLibrary = async (
   });
 };
 
-
 /* =========================
    LIBRARY GOAL
 ========================= */
 
-export const getLibraryGoal = async (
-  libraryId: string,
-  year: number,
-) => {
+export const getLibraryGoal = async (libraryId: string, year: number) => {
   return prisma.libraryGoal.findUnique({
     where: {
       libraryId_year: {
