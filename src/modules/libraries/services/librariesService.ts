@@ -25,6 +25,7 @@ import {
 import { getUserByEmail } from "../../users/repositories/usersRepository.js";
 
 import { buildEffectiveBook } from "../../../utils/effectiveBook.js";
+import { classifyBookMetadata } from "../../../utils/bookMetadataClassifier.js";
 import prisma from "../../../utils/prisma.js";
 
 import { createLibraryBookAddedNotificationsService } from "../../notifications/services/notificationsService.js";
@@ -457,7 +458,17 @@ export const addBookToLibraryService = async (
    * Глобальної Book ще немає.
    * Створюємо Book + LibraryBook.
    */
-  const book = await createBookInLibrary(libraryId, userId, data, coverUrl);
+  const tags = classifyBookMetadata(data);
+
+  const book = await createBookInLibrary(
+    libraryId,
+    userId,
+    {
+      ...data,
+      tags,
+    },
+    coverUrl,
+  );
 
   /*
    * Беремо щойно створений
@@ -472,10 +483,10 @@ export const addBookToLibraryService = async (
   }
 
   await notifyLibraryMembersAboutAddedBook(
-      libraryId,
-      userId,
-      libraryBook.book.id,
-    );
+    libraryId,
+    userId,
+    libraryBook.book.id,
+  );
 
   return buildEffectiveBook({
     book: libraryBook.book,
@@ -569,8 +580,6 @@ export const updateLibraryBookCoverService = async (
   });
 };
 
-
-
 /* =========================
    LIBRARY GOAL
 ========================= */
@@ -610,10 +619,7 @@ const buildLibraryGoalProgress = (
     goal: booksGoal,
     progress,
     remaining: Math.max(booksGoal - progress, 0),
-    percent: Math.min(
-      Math.round((progress / booksGoal) * 100),
-      100,
-    ),
+    percent: Math.min(Math.round((progress / booksGoal) * 100), 100),
     completed: progress >= booksGoal,
   };
 };
@@ -623,10 +629,7 @@ export const getLibraryGoalService = async (
   libraryId: string,
   year?: number,
 ) => {
-  const membership = await getLibraryMembership(
-    libraryId,
-    currentUserId,
-  );
+  const membership = await getLibraryMembership(libraryId, currentUserId);
 
   if (!membership) {
     throw new Error("Library not found");
@@ -665,9 +668,5 @@ export const updateLibraryGoalService = async (
     countLibraryBookAddedEvents(libraryId, resolvedYear),
   ]);
 
-  return buildLibraryGoalProgress(
-    resolvedYear,
-    goal.booksGoal,
-    progress,
-  );
+  return buildLibraryGoalProgress(resolvedYear, goal.booksGoal, progress);
 };

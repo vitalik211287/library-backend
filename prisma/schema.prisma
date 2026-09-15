@@ -108,6 +108,7 @@ model Book {
   language    String?
   coverUrl    String?
   description String?
+  tags        String[] @default([])
 
   // Legacy fields kept for database compatibility.
   // Personal reading state is stored in UserBook.
