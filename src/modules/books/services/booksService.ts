@@ -1,4 +1,4 @@
-﻿import { getAllBooks } from "../repositories/booksRepository.js";
+import { getAllBooks } from "../repositories/booksRepository.js";
 
 export const getAllBooksService = async () => {
   const books = await getAllBooks();
