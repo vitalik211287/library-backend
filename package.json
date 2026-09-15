@@ -14,7 +14,6 @@
     "build": "prisma generate && tsc",
     "start": "node dist/server.js",
     "migrate:deploy": "prisma migrate deploy"
-   
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
@@ -24,6 +23,7 @@
     "cloudinary": "^1.41.3",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "iconv-lite": "^0.7.3",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "multer-storage-cloudinary": "^4.0.0",
