@@ -1,5 +1,7 @@
 ﻿import type { ProviderBook } from "../types/providerBook.js";
 
+import { extractBookFromWebPage } from "../utils/webBookPageExtractor.js";
+
 type SerperOrganicResult = {
   title?: string;
   link?: string;
@@ -117,6 +119,8 @@ export const enrichBookViaSerper = async (
   let pages = book.pages && book.pages > 0 ? book.pages : null;
   let language = book.language;
   let genre = book.genre;
+  let description = book.description;
+  let coverUrl = book.coverUrl;
 
   let publisherOverridden = false;
   let yearOverridden = false;
@@ -192,13 +196,50 @@ export const enrichBookViaSerper = async (
     }
   }
 
+  // Try to enrich missing fields directly from relevant search result pages.
+  if (!language || !genre || !book.description || !book.coverUrl) {
+    for (const item of data.organic ?? []) {
+      if (!item.link) {
+        continue;
+      }
+
+      const text = normalizeText(
+        [item.title, item.snippet].filter(Boolean).join(" "),
+      );
+
+      if (!containsExactIsbn(text, book.isbn)) {
+        continue;
+      }
+
+      try {
+        const pageData = await extractBookFromWebPage(item.link, book.isbn);
+
+        if (!pageData) {
+          continue;
+        }
+
+        language ??= pageData.language;
+        genre ??= pageData.genre;
+        description ??= pageData.description;
+        coverUrl ??= pageData.coverUrl;
+
+        if (language && genre && description && coverUrl) {
+          break;
+        }
+      } catch (error) {
+        console.log(
+          "SERPER PAGE ENRICHMENT FAILED:",
+          item.link,
+          error instanceof Error ? error.message : error,
+        );
+      }
+    }
+  }
   const cleanPublisher =
     publisher
-      ?.replace(
-        /\s*[?|]?\s*ISBN\b.*$/i,
-        "",
-      )
-      .replace(/\s*▻\s*$/,"").trim() ?? null;
+      ?.replace(/\s*[?|]?\s*ISBN\b.*$/i, "")
+      .replace(/\s*▻\s*$/, "")
+      .trim() ?? null;
 
   return {
     ...book,
@@ -208,8 +249,7 @@ export const enrichBookViaSerper = async (
     pages,
     language,
     genre,
+    description,
+    coverUrl,
   };
 };
-
-
-

@@ -34,7 +34,7 @@ const enrichBook = async (
     }
 
     try {
-      console.log(`🧩 Enriching from provider: ${provider.name}`);
+      console.log(`рџ§© Enriching from provider: ${provider.name}`);
 
       const candidate = await provider.getBook(isbn);
 
@@ -52,7 +52,7 @@ const enrichBook = async (
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
 
-      console.log(`⚪ Enrichment ${provider.name}: ${message}`);
+      console.log(`вљЄ Enrichment ${provider.name}: ${message}`);
     }
   }
 
@@ -64,14 +64,14 @@ export const lookupBookByIsbnService = async (
 ): Promise<LookupResult> => {
   const errors: string[] = [];
 
-  console.log("🔎 LOOKUP SERVICE:", isbn);
+  console.log("рџ”Ћ LOOKUP SERVICE:", isbn);
 
   const normalizedIsbn = isbn.replace(/[^0-9X]/gi, "");
 
   const localBook = await getBookByIsbn(normalizedIsbn);
 
   if (localBook) {
-    console.log("✅ Found in local database");
+    console.log("вњ… Found in local database");
 
     return {
       isbn: localBook.isbn,
@@ -91,15 +91,15 @@ export const lookupBookByIsbnService = async (
 
   for (const provider of bookProviders) {
     try {
-      console.log(`➡️ Trying provider: ${provider.name}`);
+      console.log(`вћЎпёЏ Trying provider: ${provider.name}`);
 
       const book = await provider.getBook(normalizedIsbn);
 
-      console.log(`✅ Found on ${provider.name}`);
+      console.log(`вњ… Found on ${provider.name}`);
 
       let enrichedBook = book;
 
-      if (provider.name === "yakaboo-search") {
+      if (provider.name === "yakaboo-search" || provider.name === "book-plus") {
         enrichedBook = await enrichBook(normalizedIsbn, book, provider.name);
 
         enrichedBook = await enrichBookViaSerper(enrichedBook);
@@ -118,7 +118,7 @@ export const lookupBookByIsbnService = async (
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
 
-      console.log(`❌ ${provider.name}: ${message}`);
+      console.log(`вќЊ ${provider.name}: ${message}`);
 
       errors.push(`${provider.name}: ${message}`);
     }
