@@ -1,5 +1,5 @@
 import { bookProviders } from "../../../providers/bookProviders.js";
-
+import { getBookByIsbn } from "../repositories/booksRepository.js";
 import type { ProviderBook } from "../../../types/providerBook.js";
 
 import { enrichBookViaSerper } from "../../../providers/serperBookEnrichment.js";
@@ -66,18 +66,41 @@ export const lookupBookByIsbnService = async (
 
   console.log("🔎 LOOKUP SERVICE:", isbn);
 
+  const normalizedIsbn = isbn.replace(/[^0-9X]/gi, "");
+
+  const localBook = await getBookByIsbn(normalizedIsbn);
+
+  if (localBook) {
+    console.log("✅ Found in local database");
+
+    return {
+      isbn: localBook.isbn,
+      title: localBook.title,
+      author: localBook.author,
+      publisher: localBook.publisher,
+      year: localBook.year,
+      pages: localBook.pages,
+      language: localBook.language,
+      genre: localBook.genre,
+      description: localBook.description,
+      coverUrl: localBook.coverUrl,
+      sourceUrl: "",
+      source: "local",
+    };
+  }
+
   for (const provider of bookProviders) {
     try {
       console.log(`➡️ Trying provider: ${provider.name}`);
 
-      const book = await provider.getBook(isbn);
+      const book = await provider.getBook(normalizedIsbn);
 
       console.log(`✅ Found on ${provider.name}`);
 
       let enrichedBook = book;
 
       if (provider.name === "yakaboo-search") {
-        enrichedBook = await enrichBook(isbn, book, provider.name);
+        enrichedBook = await enrichBook(normalizedIsbn, book, provider.name);
 
         enrichedBook = await enrichBookViaSerper(enrichedBook);
       }
