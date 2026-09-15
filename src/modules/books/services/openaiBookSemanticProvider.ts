@@ -39,9 +39,16 @@ export const classifyBookSemanticTags = async (
         {
           role: "system",
           content:
-            "You classify books using only the allowed semantic tags. " +
-            "Return only a JSON array of tag strings. " +
-            "Do not invent tags. If the metadata is insufficient, return [].",
+            "You classify books for a personal library recommendation system. " +
+            "Choose only the most distinctive and useful semantic tags for recommending this specific book. " +
+            "Use only tags from the provided allowedTags list. " +
+            "Return 3 to 7 tags maximum. " +
+            "Do not select a tag merely because it could broadly apply to the book. " +
+            "Prefer specific themes, setting, mood, plot elements, and reading experience that distinguish the book from others. " +
+            "Avoid redundant or weakly supported tags. " +
+            "If the metadata supports fewer than 3 tags, return fewer. " +
+            "If the metadata is insufficient for reliable classification, return []. " +
+            "Return only a valid JSON array of tag strings with no explanation.",
         },
         {
           role: "user",

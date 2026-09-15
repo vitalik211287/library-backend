@@ -1,17 +1,27 @@
 export const ALLOWED_SEMANTIC_TAGS = [
-  // Atmosphere
+  // Atmosphere / mood
   "dark",
   "cozy",
   "humorous",
   "satirical",
   "emotional",
+  "hopeful",
+  "tense",
+  "romantic",
 
-  // Plot
+  // Plot / story
   "adventure",
   "mystery",
   "survival",
   "quest",
   "investigation",
+  "time-travel",
+  "coming-of-age",
+
+  // Relationships
+  "family",
+  "friendship",
+  "romance",
 
   // Themes
   "space",
@@ -20,24 +30,37 @@ export const ALLOWED_SEMANTIC_TAGS = [
   "technology",
   "science",
   "society",
+  "history",
+  "nature",
+  "religion",
 
   // World / setting
   "supernatural",
   "magic",
-  "monsters",
   "aliens",
   "post-apocalyptic",
+  "dystopian",
+  "historical",
+  "mythology",
 
   // Ideas
   "philosophical",
   "psychological",
   "social-commentary",
 
-  // Scale
-  "epic",
-  "personal-story",
+  // Non-fiction / interests
+  "cocktails",
+  "mixology",
+  "food",
+  "art",
+  "cinema",
+  "programming",
 
-  // Reading style
+  // Scale / structure
+  "epic",
+  "anthology",
+
+  // Reading experience
   "fast-paced",
   "slow-paced",
   "light-read",
@@ -51,20 +74,20 @@ export type SemanticBookTag = (typeof ALLOWED_SEMANTIC_TAGS)[number];
 const ALLOWED_SEMANTIC_TAG_SET = new Set<string>(ALLOWED_SEMANTIC_TAGS);
 
 /**
- * Перевіряє, чи є значення дозволеним semantic tag.
+ * Перевіряє, чи є значення дозволеним семантичним тегом книги.
  */
 export const isSemanticBookTag = (value: string): value is SemanticBookTag => {
   return ALLOWED_SEMANTIC_TAG_SET.has(value);
 };
 
 /**
- * Приймає потенційні semantic tags та залишає тільки
- * значення з нашого контрольованого словника.
+ * Нормалізує потенційні семантичні теги та залишає лише
+ * значення з контрольованого словника.
  *
  * Також:
- * - прибирає дублікати;
- * - приводить значення до lower-case;
- * - обрізає пробіли.
+ * - видаляє дублікати;
+ * - переводить значення в lower-case;
+ * - прибирає зайві пробіли.
  */
 export const sanitizeSemanticBookTags = (
   values: readonly string[],
@@ -83,8 +106,8 @@ export const sanitizeSemanticBookTags = (
 };
 
 /**
- * Об'єднує вже існуючі Book.tags із semantic tags,
- * не видаляючи genre tags та не створюючи дублікатів.
+ * Об'єднує наявні Book.tags із семантичними тегами,
+ * не видаляючи жанрові теги та не створюючи дублікатів.
  */
 export const mergeBookTags = (
   currentTags: readonly string[],
