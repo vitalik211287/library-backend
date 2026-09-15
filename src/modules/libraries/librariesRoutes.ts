@@ -20,6 +20,7 @@ import {
   updateLibraryMemberRoleController,
 } from "./controllers/librariesController.js";
 
+import { getBookRecommendationsController } from "../recommendations/controllers/bookRecommendationsController.js";
 import { authMiddleware } from "../../middlewares/authMiddleware.js";
 
 import { uploadCover } from "../../middlewares/uploadCover.js";
@@ -112,6 +113,10 @@ librariesRouter.delete(
 /*
  * Весь effective catalog.
  */
+librariesRouter.get(
+  "/:libraryId/recommendations",
+  getBookRecommendationsController,
+);
 librariesRouter.get("/:libraryId/books", getLibraryBooksController);
 
 /*

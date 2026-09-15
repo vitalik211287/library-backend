@@ -245,6 +245,32 @@ export const getLibraryBooks = async (libraryId: string, userId: string) => {
   });
 };
 
+export const getLibraryRecommendationCandidates = async (
+  libraryId: string,
+  userId: string,
+) => {
+  return prisma.libraryBook.findMany({
+    where: {
+      libraryId,
+
+      book: {
+        users: {
+          none: {
+            userId,
+            status: {
+              in: ["READING", "PAUSED", "FINISHED"],
+            },
+          },
+        },
+      },
+    },
+
+    include: {
+      book: true,
+    },
+  });
+};
+
 /*
  * Використовується для edit/permissions.
  * Тут персональний UserBook не потрібен.
