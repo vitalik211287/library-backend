@@ -63,7 +63,11 @@ export const getBookRecommendationsService = async (
         return b.score - a.score;
       }
 
-      return b.matchedTags.length - a.matchedTags.length;
+      if (b.matchedTags.length !== a.matchedTags.length) {
+        return b.matchedTags.length - a.matchedTags.length;
+      }
+
+      return Math.random() - 0.5;
     });
 
   const minimumStrongMatches = selectedTags.length === 1 ? 1 : 2;
