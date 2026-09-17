@@ -1,6 +1,7 @@
 import { ACHIEVEMENTS } from "../../stats/services/getUserAchievementsService.js";
 import {
   createNotification,
+  deleteNotifications,
   createLibraryNotifications,
   createSocialActivityNotifications,
   getSocialActivityNotificationRecipients,
@@ -56,10 +57,9 @@ export const getNotificationsService = async (userId: string) => {
     const achievement =
       notification.type === "SOCIAL_ACTIVITY" &&
       notification.activity?.type === "ACHIEVEMENT_UNLOCKED"
-        ? ACHIEVEMENTS.find(
-            (item) =>
-              item.id === notification.activity?.achievementId,
-          ) ?? null
+        ? (ACHIEVEMENTS.find(
+            (item) => item.id === notification.activity?.achievementId,
+          ) ?? null)
         : null;
 
     return {
@@ -76,9 +76,7 @@ export const getNotificationsService = async (userId: string) => {
   });
 };
 
-export const getUnreadNotificationsCountService = async (
-  userId: string,
-) => {
+export const getUnreadNotificationsCountService = async (userId: string) => {
   return getUnreadNotificationsCount(userId);
 };
 
@@ -89,9 +87,7 @@ export const markNotificationAsReadService = async (
   return markNotificationAsRead(notificationId, userId);
 };
 
-export const markAllNotificationsAsReadService = async (
-  userId: string,
-) => {
+export const markAllNotificationsAsReadService = async (userId: string) => {
   return markAllNotificationsAsRead(userId);
 };
 
@@ -107,11 +103,7 @@ export const createLibraryBookAddedNotificationsService = async ({
   bookId: string;
 }) => {
   const recipientUserIds = [
-    ...new Set(
-      memberUserIds.filter(
-        (userId) => userId !== actorUserId,
-      ),
-    ),
+    ...new Set(memberUserIds.filter((userId) => userId !== actorUserId)),
   ];
 
   return createLibraryNotifications({
@@ -130,8 +122,7 @@ export const createSocialActivityNotificationsService = async ({
   activityId: string;
   bookId?: string | null;
 }) => {
-  const recipients =
-    await getSocialActivityNotificationRecipients(actorUserId);
+  const recipients = await getSocialActivityNotificationRecipients(actorUserId);
 
   const recipientUserIds = [
     ...new Set(
@@ -147,4 +138,11 @@ export const createSocialActivityNotificationsService = async ({
     activityId,
     bookId: bookId ?? null,
   });
+};
+
+export const deleteNotificationsService = async (
+  notificationIds: string[],
+  userId: string,
+) => {
+  return deleteNotifications(notificationIds, userId);
 };

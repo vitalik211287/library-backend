@@ -1,6 +1,7 @@
-﻿import type { Request, Response } from "express";
+import type { Request, Response } from "express";
 
 import {
+  deleteNotificationsService,
   getNotificationsService,
   getUnreadNotificationsCountService,
   markAllNotificationsAsReadService,
@@ -120,6 +121,44 @@ export const markAllNotificationsAsReadController = async (
 
     return res.status(500).json({
       message: "Failed to mark all notifications as read",
+    });
+  }
+};
+
+export const deleteNotificationsController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { ids } = req.body;
+
+    if (
+      !Array.isArray(ids) ||
+      ids.length === 0 ||
+      !ids.every((id) => typeof id === "string" && id.length > 0)
+    ) {
+      return res.status(400).json({
+        message: "Notification IDs are required",
+      });
+    }
+
+    const result = await deleteNotificationsService(ids, userId);
+
+    return res.status(200).json({
+      success: true,
+      deletedCount: result.count,
+    });
+  } catch (error) {
+    console.error("Delete notifications error:", error);
+
+    return res.status(500).json({
+      message: "Failed to delete notifications",
     });
   }
 };

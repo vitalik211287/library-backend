@@ -209,3 +209,17 @@ export const createSocialActivityNotifications = async (data: {
     skipDuplicates: true,
   });
 };
+
+export const deleteNotifications = async (
+  notificationIds: string[],
+  userId: string,
+) => {
+  return prisma.notification.deleteMany({
+    where: {
+      id: {
+        in: notificationIds,
+      },
+      userId,
+    },
+  });
+};
