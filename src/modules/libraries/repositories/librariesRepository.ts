@@ -471,3 +471,38 @@ export const countLibraryBookAddedEvents = async (
     },
   });
 };
+
+export const getLibraryBookAddedEvents = async (
+  libraryId: string,
+  year: number,
+) => {
+  const from = new Date(Date.UTC(year, 0, 1));
+  const to = new Date(Date.UTC(year + 1, 0, 1));
+
+  return prisma.libraryBookEvent.findMany({
+    where: {
+      libraryId,
+      type: "BOOK_ADDED",
+      occurredAt: {
+        gte: from,
+        lt: to,
+      },
+    },
+    select: {
+      id: true,
+      occurredAt: true,
+      book: {
+        select: {
+          id: true,
+          isbn: true,
+          title: true,
+          author: true,
+          coverUrl: true,
+        },
+      },
+    },
+    orderBy: {
+      occurredAt: "desc",
+    },
+  });
+};

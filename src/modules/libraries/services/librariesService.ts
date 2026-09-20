@@ -13,6 +13,7 @@ import {
   getLibraryMembers,
   getLibraryMembership,
   getLibraryGoal,
+  getLibraryBookAddedEvents,
   getUserLibraries,
   removeLibraryMember,
   updateLibraryBook,
@@ -648,16 +649,23 @@ export const getLibraryGoalService = async (
 
   const resolvedYear = resolveLibraryGoalYear(year);
 
-  const [goal, progress] = await Promise.all([
+  const [goal, progress, events] = await Promise.all([
     getLibraryGoal(libraryId, resolvedYear),
     countLibraryBookAddedEvents(libraryId, resolvedYear),
+    getLibraryBookAddedEvents(libraryId, resolvedYear),
   ]);
 
-  return buildLibraryGoalProgress(
-    resolvedYear,
-    goal?.booksGoal ?? null,
-    progress,
-  );
+  return {
+    ...buildLibraryGoalProgress(
+      resolvedYear,
+      goal?.booksGoal ?? null,
+      progress,
+    ),
+    books: events.map((event) => ({
+      ...event.book,
+      addedAt: event.occurredAt,
+    })),
+  };
 };
 
 export const updateLibraryGoalService = async (
