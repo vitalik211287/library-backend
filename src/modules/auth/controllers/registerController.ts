@@ -6,6 +6,12 @@ export const registerController = async (req: Request, res: Response) => {
   try {
     const { name, email, password } = req.body;
 
+    if (!name || typeof name !== "string" || !name.trim()) {
+      return res.status(400).json({
+        message: "Name is required",
+      });
+    }
+
     if (!email || typeof email !== "string") {
       return res.status(400).json({
         message: "Email is required",

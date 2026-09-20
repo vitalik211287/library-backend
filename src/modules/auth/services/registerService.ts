@@ -7,7 +7,7 @@ import {
   getUserByEmail,
 } from "../../users/repositories/usersRepository.js";
 type RegisterData = {
-  name?: string;
+  name: string;
   email: string;
   password: string;
 };
@@ -62,4 +62,3 @@ export const registerService = async ({
     token,
   };
 };
-
