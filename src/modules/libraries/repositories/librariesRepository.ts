@@ -1,4 +1,4 @@
-import prisma from "../../../utils/prisma.js";
+﻿import prisma from "../../../utils/prisma.js";
 
 import type { LibraryRole, Prisma } from "@prisma/client";
 
@@ -492,12 +492,13 @@ export const getLibraryBookAddedEvents = async (
       id: true,
       occurredAt: true,
       book: {
-        select: {
-          id: true,
-          isbn: true,
-          title: true,
-          author: true,
-          coverUrl: true,
+        include: {
+          libraries: {
+            where: {
+              libraryId,
+            },
+            take: 1,
+          },
         },
       },
     },

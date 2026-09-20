@@ -661,10 +661,17 @@ export const getLibraryGoalService = async (
       goal?.booksGoal ?? null,
       progress,
     ),
-    books: events.map((event) => ({
-      ...event.book,
-      addedAt: event.occurredAt,
-    })),
+    books: events.map((event) => {
+      const { libraries, ...book } = event.book;
+
+      return {
+        ...buildEffectiveBook({
+          book,
+          libraryBook: libraries[0] ?? null,
+        }),
+        addedAt: event.occurredAt,
+      };
+    }),
   };
 };
 
