@@ -9,6 +9,7 @@ import librariesRouter from "./modules/libraries/librariesRoutes.js";
 import adminRouter from "./modules/admin/adminRoutes.js";
 import socialRouter from "./modules/social/socialRoutes.js";
 import notificationsRouter from "./modules/notifications/notificationsRoutes.js";
+import settingsRouter from "./modules/settings/settingsRoutes.js";
 
 const app = express();
 
@@ -42,7 +43,6 @@ app.use("/api/social", socialRouter);
 
 app.use("/api/notifications", notificationsRouter);
 
+app.use("/api/settings", settingsRouter);
+
 export default app;
-
-
-

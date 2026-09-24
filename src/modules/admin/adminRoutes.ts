@@ -3,6 +3,8 @@ import { Router } from "express";
 import { authMiddleware } from "../../middlewares/authMiddleware.js";
 import { adminMiddleware } from "../../middlewares/adminMiddleware.js";
 
+import { updateGlobalThemeController } from "../settings/controllers/settingsController.js";
+
 import {
   blockAdminUserController,
   getAdminUserByIdController,
@@ -18,19 +20,12 @@ adminRouter.use(adminMiddleware);
 
 adminRouter.get("/users", getAdminUsersController);
 
-adminRouter.get(
-  "/users/:userId",
-  getAdminUserByIdController,
-);
+adminRouter.get("/users/:userId", getAdminUserByIdController);
 
-adminRouter.patch(
-  "/users/:userId/block",
-  blockAdminUserController,
-);
+adminRouter.patch("/users/:userId/block", blockAdminUserController);
 
-adminRouter.patch(
-  "/users/:userId/unblock",
-  unblockAdminUserController,
-);
+adminRouter.patch("/users/:userId/unblock", unblockAdminUserController);
+
+adminRouter.patch("/settings/theme", updateGlobalThemeController);
 
 export default adminRouter;
