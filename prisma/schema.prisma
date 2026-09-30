@@ -70,6 +70,7 @@ model User {
 
   socialActivities   SocialActivity[]
   activityKudosGiven ActivityKudos[]
+  socialPosts        SocialPost[]
 
   socialPreferencesOwned    UserSocialPreference[] @relation("SocialPreferenceOwner")
   socialPreferencesTargeted UserSocialPreference[] @relation("SocialPreferenceTarget")
@@ -143,6 +144,7 @@ model Book {
   libraryBookEvents LibraryBookEvent[]
   socialActivities  SocialActivity[]
   notifications     Notification[]
+  socialPosts       SocialPost[]
 }
 
 model UserBook {
@@ -367,6 +369,29 @@ enum NotificationType {
   NEW_FOLLOWER
   LIBRARY_BOOK_ADDED
   SOCIAL_ACTIVITY
+}
+
+model SocialPost {
+  id String @id @default(uuid())
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  text String
+
+  bookId String?
+  book   Book?   @relation(fields: [bookId], references: [id], onDelete: SetNull)
+
+  parentId String?
+  parent   SocialPost?  @relation("SocialPostReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  SocialPost[] @relation("SocialPostReplies")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorId, createdAt])
+  @@index([bookId, createdAt])
+  @@index([parentId, createdAt])
 }
 
 model SocialActivity {

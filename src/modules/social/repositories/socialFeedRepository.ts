@@ -1,9 +1,6 @@
 import prisma from "../../../utils/prisma.js";
 
-export const getSocialFeed = async (
-  currentUserId: string,
-  limit = 30,
-) => {
+export const getSocialFeed = async (currentUserId: string, limit = 30) => {
   return prisma.socialActivity.findMany({
     where: {
       OR: [
@@ -71,6 +68,69 @@ export const getSocialFeed = async (
     take: limit,
   });
 };
+
+export const getSocialFeedPosts = async (currentUserId: string, limit = 30) => {
+  return prisma.socialPost.findMany({
+    where: {
+      parentId: null,
+
+      OR: [
+        {
+          authorId: currentUserId,
+        },
+        {
+          author: {
+            followers: {
+              some: {
+                followerId: currentUserId,
+              },
+            },
+          },
+        },
+      ],
+    },
+
+    select: {
+      id: true,
+      text: true,
+      bookId: true,
+      parentId: true,
+      createdAt: true,
+      updatedAt: true,
+
+      author: {
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+        },
+      },
+
+      book: {
+        select: {
+          id: true,
+          title: true,
+          author: true,
+          coverUrl: true,
+          pages: true,
+        },
+      },
+
+      _count: {
+        select: {
+          replies: true,
+        },
+      },
+    },
+
+    orderBy: {
+      createdAt: "desc",
+    },
+
+    take: limit,
+  });
+};
+
 export const getAchievementUnlockBook = async (
   userId: string,
   target: number,

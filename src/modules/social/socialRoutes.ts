@@ -9,20 +9,25 @@ import {
   getActivityKudosUsersController,
 } from "./controllers/activityKudosController.js";
 
+import {
+  createSocialPostController,
+  getSocialPostThreadController,
+} from "./controllers/socialPostController.js";
+
 const socialRouter = Router();
 
 socialRouter.use(authMiddleware);
 
 socialRouter.get("/feed", getSocialFeedController);
 
+socialRouter.post("/posts", createSocialPostController);
+socialRouter.get("/posts/:postId", getSocialPostThreadController);
+
 socialRouter.get(
   "/activities/:activityId/kudos",
   getActivityKudosUsersController,
 );
-socialRouter.post(
-  "/activities/:activityId/kudos",
-  addActivityKudosController,
-);
+socialRouter.post("/activities/:activityId/kudos", addActivityKudosController);
 
 socialRouter.delete(
   "/activities/:activityId/kudos",
@@ -30,5 +35,3 @@ socialRouter.delete(
 );
 
 export default socialRouter;
-
-
