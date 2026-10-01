@@ -5,7 +5,32 @@ export const createNotification = async (data: {
   actorId: string;
   type: "KUDOS_RECEIVED" | "NEW_FOLLOWER";
   activityId?: string | null;
+  postId?: string | null;
 }) => {
+  if (data.postId) {
+    return prisma.notification.upsert({
+      where: {
+        userId_actorId_type_postId: {
+          userId: data.userId,
+          actorId: data.actorId,
+          type: data.type,
+          postId: data.postId,
+        },
+      },
+
+      update: {
+        isRead: false,
+        createdAt: new Date(),
+      },
+
+      create: {
+        userId: data.userId,
+        actorId: data.actorId,
+        type: data.type,
+        postId: data.postId,
+      },
+    });
+  }
   if (data.activityId) {
     return prisma.notification.upsert({
       where: {
@@ -51,7 +76,7 @@ export const getNotifications = async (userId: string) => {
       id: true,
       type: true,
       activityId: true,
-
+      postId: true,
       activity: {
         select: {
           id: true,
