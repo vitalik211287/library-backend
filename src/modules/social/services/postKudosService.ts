@@ -1,4 +1,4 @@
-﻿import {
+import {
   addPostKudos,
   getPostForKudos,
   getPostKudosUsers,
@@ -6,6 +6,7 @@
 } from "../repositories/postKudosRepository.js";
 
 import { createPostKudosNotificationService } from "../../notifications/services/notificationsService.js";
+import { emitPostKudosUpdated } from "../../../realtime/socket.js";
 
 export const addPostKudosService = async (postId: string, userId: string) => {
   const post = await getPostForKudos(postId);
@@ -27,11 +28,14 @@ export const addPostKudosService = async (postId: string, userId: string) => {
   });
 
   const updated = await getPostForKudos(postId);
+  const kudosCount = updated?._count.kudos ?? 0;
+
+  emitPostKudosUpdated(postId, kudosCount);
 
   return {
     success: true,
     hasKudos: true,
-    kudosCount: updated?._count.kudos ?? 0,
+    kudosCount,
   };
 };
 
@@ -48,11 +52,14 @@ export const removePostKudosService = async (
   await removePostKudos(postId, userId);
 
   const updated = await getPostForKudos(postId);
+  const kudosCount = updated?._count.kudos ?? 0;
+
+  emitPostKudosUpdated(postId, kudosCount);
 
   return {
     success: true,
     hasKudos: false,
-    kudosCount: updated?._count.kudos ?? 0,
+    kudosCount,
   };
 };
 
