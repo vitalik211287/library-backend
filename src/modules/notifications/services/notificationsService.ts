@@ -32,6 +32,27 @@ export const createKudosNotificationService = async ({
   });
 };
 
+export const createPostKudosNotificationService = async ({
+  recipientUserId,
+  actorUserId,
+  postId,
+}: {
+  recipientUserId: string;
+  actorUserId: string;
+  postId: string;
+}) => {
+  if (recipientUserId === actorUserId) {
+    return null;
+  }
+
+  return createNotification({
+    userId: recipientUserId,
+    actorId: actorUserId,
+    type: "KUDOS_RECEIVED",
+    postId,
+  });
+};
+
 export const createNewFollowerNotificationService = async ({
   recipientUserId,
   actorUserId,

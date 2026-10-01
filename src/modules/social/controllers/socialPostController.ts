@@ -2,7 +2,9 @@ import type { Request, Response } from "express";
 
 import {
   createSocialPostService,
+  deleteSocialPostService,
   getSocialPostThreadService,
+  updateSocialPostService,
 } from "../services/socialPostService.js";
 export const createSocialPostController = async (
   req: Request,
@@ -86,6 +88,109 @@ export const getSocialPostThreadController = async (
 
     return res.status(500).json({
       message: "Failed to get social post thread",
+    });
+  }
+};
+
+export const updateSocialPostController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    const { postId } = req.params;
+
+    if (typeof postId !== "string") {
+      return res.status(400).json({
+        message: "Post ID is required",
+      });
+    }
+
+    const { text, bookId } = req.body;
+
+    const post = await updateSocialPostService({
+      postId,
+      userId,
+      text,
+      bookId,
+    });
+
+    return res.status(200).json(post);
+  } catch (error) {
+    console.error("Update social post error:", error);
+
+    if (error instanceof Error) {
+      const status =
+        error.message === "Допис не знайдено" ||
+        error.message === "Книгу не знайдено"
+          ? 404
+          : error.message === "Ви не можете редагувати чужий допис"
+            ? 403
+            : error.message === "Текст допису не може бути порожнім" ||
+                error.message.startsWith("Текст допису не може перевищувати")
+              ? 400
+              : 500;
+
+      return res.status(status).json({
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      message: "Failed to update social post",
+    });
+  }
+};
+
+export const deleteSocialPostController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    const { postId } = req.params;
+
+    if (typeof postId !== "string") {
+      return res.status(400).json({
+        message: "Post ID is required",
+      });
+    }
+
+    const result = await deleteSocialPostService(postId, userId);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Delete social post error:", error);
+
+    if (error instanceof Error) {
+      const status =
+        error.message === "Допис не знайдено"
+          ? 404
+          : error.message === "Ви не можете видалити чужий допис"
+            ? 403
+            : 500;
+
+      return res.status(status).json({
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      message: "Failed to delete social post",
     });
   }
 };

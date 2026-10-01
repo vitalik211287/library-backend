@@ -112,3 +112,55 @@ export const getSocialPostThreadById = async (postId: string) => {
     },
   });
 };
+
+type UpdateSocialPostData = {
+  text: string;
+  bookId?: string | null;
+};
+
+export const updateSocialPost = async (
+  postId: string,
+  data: UpdateSocialPostData,
+) => {
+  return prisma.socialPost.update({
+    where: {
+      id: postId,
+    },
+    data: {
+      text: data.text,
+      bookId: data.bookId ?? null,
+    },
+    include: {
+      author: {
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+        },
+      },
+      book: {
+        select: {
+          id: true,
+          isbn: true,
+          title: true,
+          author: true,
+          coverUrl: true,
+        },
+      },
+      _count: {
+        select: {
+          replies: true,
+          kudos: true,
+        },
+      },
+    },
+  });
+};
+
+export const deleteSocialPost = async (postId: string) => {
+  return prisma.socialPost.delete({
+    where: {
+      id: postId,
+    },
+  });
+};

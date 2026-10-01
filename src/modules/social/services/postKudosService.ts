@@ -5,10 +5,9 @@
   removePostKudos,
 } from "../repositories/postKudosRepository.js";
 
-export const addPostKudosService = async (
-  postId: string,
-  userId: string,
-) => {
+import { createPostKudosNotificationService } from "../../notifications/services/notificationsService.js";
+
+export const addPostKudosService = async (postId: string, userId: string) => {
   const post = await getPostForKudos(postId);
 
   if (!post) {
@@ -20,6 +19,12 @@ export const addPostKudosService = async (
   }
 
   await addPostKudos(postId, userId);
+
+  await createPostKudosNotificationService({
+    recipientUserId: post.authorId,
+    actorUserId: userId,
+    postId,
+  });
 
   const updated = await getPostForKudos(postId);
 
@@ -51,9 +56,7 @@ export const removePostKudosService = async (
   };
 };
 
-export const getPostKudosUsersService = async (
-  postId: string,
-) => {
+export const getPostKudosUsersService = async (postId: string) => {
   const post = await getPostForKudos(postId);
 
   if (!post) {
