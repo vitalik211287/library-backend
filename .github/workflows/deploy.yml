@@ -1,0 +1,19 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Deploy backend
+        working-directory: /home/srv/apps/library-backend
+        run: |
+          git pull --ff-only origin main
+          docker compose build backend
+          docker compose up -d
+          docker compose ps
