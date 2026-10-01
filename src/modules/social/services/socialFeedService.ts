@@ -71,6 +71,9 @@ export const getSocialFeedService = async (
 
     repliesCount: post._count.replies,
 
+    kudosCount: post._count.kudos,
+    hasKudos: post.kudos.length > 0,
+
     isOwnPost: post.author.id === currentUserId,
   }));
 

@@ -14,6 +14,11 @@ import {
   getSocialPostThreadController,
 } from "./controllers/socialPostController.js";
 
+import {
+  addPostKudosController,
+  removePostKudosController,
+  getPostKudosUsersController,
+} from "./controllers/postKudosController.js";
 const socialRouter = Router();
 
 socialRouter.use(authMiddleware);
@@ -22,6 +27,10 @@ socialRouter.get("/feed", getSocialFeedController);
 
 socialRouter.post("/posts", createSocialPostController);
 socialRouter.get("/posts/:postId", getSocialPostThreadController);
+
+socialRouter.get("/posts/:postId/kudos", getPostKudosUsersController);
+socialRouter.post("/posts/:postId/kudos", addPostKudosController);
+socialRouter.delete("/posts/:postId/kudos", removePostKudosController);
 
 socialRouter.get(
   "/activities/:activityId/kudos",

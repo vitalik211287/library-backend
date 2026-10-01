@@ -70,6 +70,7 @@ model User {
 
   socialActivities   SocialActivity[]
   activityKudosGiven ActivityKudos[]
+  postKudosGiven     PostKudos[]
   socialPosts        SocialPost[]
 
   socialPreferencesOwned    UserSocialPreference[] @relation("SocialPreferenceOwner")
@@ -386,6 +387,8 @@ model SocialPost {
   parent   SocialPost?  @relation("SocialPostReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies  SocialPost[] @relation("SocialPostReplies")
 
+  kudos PostKudos[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -419,6 +422,22 @@ model SocialActivity {
   @@index([userId, createdAt])
   @@index([type, createdAt])
   @@index([bookId])
+}
+
+model PostKudos {
+  id String @id @default(uuid())
+
+  postId String
+  post   SocialPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
 }
 
 model ActivityKudos {

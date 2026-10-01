@@ -116,9 +116,19 @@ export const getSocialFeedPosts = async (currentUserId: string, limit = 30) => {
         },
       },
 
+      kudos: {
+        where: {
+          userId: currentUserId,
+        },
+        select: {
+          id: true,
+        },
+      },
+
       _count: {
         select: {
           replies: true,
+          kudos: true,
         },
       },
     },
