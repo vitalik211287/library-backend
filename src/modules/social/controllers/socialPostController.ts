@@ -38,6 +38,7 @@ export const createSocialPostController = async (
         error.message === "Батьківський допис не знайдено"
           ? 404
           : error.message === "Текст допису не може бути порожнім" ||
+              error.message === "Відповідати можна лише на основний допис" ||
               error.message.startsWith("Текст допису не може перевищувати")
             ? 400
             : 500;

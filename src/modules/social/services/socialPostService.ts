@@ -49,6 +49,10 @@ export const createSocialPostService = async ({
     if (!parentPost) {
       throw new Error("Батьківський допис не знайдено");
     }
+
+    if (parentPost.parentId) {
+      throw new Error("Відповідати можна лише на основний допис");
+    }
   }
 
   return createSocialPost({
