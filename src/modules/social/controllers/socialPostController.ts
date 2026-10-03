@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import {
   createSocialPostService,
   deleteSocialPostService,
+  getSocialActivityThreadService,
   getSocialPostThreadService,
   updateSocialPostService,
 } from "../services/socialPostService.js";
@@ -19,13 +20,14 @@ export const createSocialPostController = async (
       });
     }
 
-    const { text, bookId, parentId } = req.body;
+    const { text, bookId, parentId, activityId } = req.body;
 
     const post = await createSocialPostService({
       authorId: userId,
       text,
       bookId,
       parentId,
+      activityId,
     });
 
     return res.status(201).json(post);
@@ -35,7 +37,8 @@ export const createSocialPostController = async (
     if (error instanceof Error) {
       const status =
         error.message === "Книгу не знайдено" ||
-        error.message === "Батьківський допис не знайдено"
+        error.message === "Батьківський допис не знайдено" ||
+        error.message === "Активність не знайдено"
           ? 404
           : error.message === "Текст допису не може бути порожнім" ||
               error.message.startsWith("Текст допису не може перевищувати")
@@ -49,6 +52,45 @@ export const createSocialPostController = async (
 
     return res.status(500).json({
       message: "Failed to create social post",
+    });
+  }
+};
+
+export const getSocialActivityThreadController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    const { activityId } = req.params;
+
+    if (typeof activityId !== "string") {
+      return res.status(400).json({
+        message: "Invalid activity id",
+      });
+    }
+
+    const thread = await getSocialActivityThreadService(activityId, userId);
+
+    return res.status(200).json(thread);
+  } catch (error) {
+    console.error("Get social activity thread error:", error);
+
+    if (error instanceof Error && error.message === "Активність не знайдено") {
+      return res.status(404).json({
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      message: "Failed to get social activity thread",
     });
   }
 };

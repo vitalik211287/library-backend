@@ -12,6 +12,7 @@ import {
 import {
   createSocialPostController,
   deleteSocialPostController,
+  getSocialActivityThreadController,
   getSocialPostThreadController,
   updateSocialPostController,
 } from "./controllers/socialPostController.js";
@@ -37,6 +38,11 @@ socialRouter.get("/posts/:postId/kudos", getPostKudosUsersController);
 
 socialRouter.post("/posts/:postId/kudos", addPostKudosController);
 socialRouter.delete("/posts/:postId/kudos", removePostKudosController);
+
+socialRouter.get(
+  "/activities/:activityId/thread",
+  getSocialActivityThreadController,
+);
 
 socialRouter.get(
   "/activities/:activityId/kudos",

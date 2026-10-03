@@ -1,4 +1,16 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../../../utils/prisma.js";
+
+export const getSocialActivityById = async (activityId: string) => {
+  return prisma.socialActivity.findUnique({
+    where: {
+      id: activityId,
+    },
+    select: {
+      id: true,
+    },
+  });
+};
 
 export const getSocialFeed = async (
   currentUserId: string,
@@ -83,6 +95,7 @@ export const getSocialFeedPosts = async (
   return prisma.socialPost.findMany({
     where: {
       parentId: null,
+      activityId: null,
       ...(profileUserId
         ? { authorId: profileUserId }
         : scope === "following"
@@ -150,6 +163,57 @@ export const getSocialFeedPosts = async (
 
     take: limit,
   });
+};
+
+export const getSocialCommentCounts = async (
+  postIds: string[],
+  activityIds: string[],
+) => {
+  const [postReplies, activityComments] = await Promise.all([
+    postIds.length
+      ? prisma.$queryRaw<Array<{ rootId: string; count: bigint }>>`
+          WITH RECURSIVE reply_tree AS (
+            SELECT id, "parentId", "parentId" AS "rootId"
+            FROM "SocialPost"
+            WHERE "parentId" IN (${Prisma.join(postIds)})
+
+            UNION ALL
+
+            SELECT child.id, child."parentId", tree."rootId"
+            FROM "SocialPost" child
+            INNER JOIN reply_tree tree ON child."parentId" = tree.id
+          )
+          SELECT "rootId", COUNT(*)::bigint AS count
+          FROM reply_tree
+          GROUP BY "rootId"
+        `
+      : Promise.resolve([]),
+
+    activityIds.length
+      ? prisma.socialPost.groupBy({
+          by: ["activityId"],
+          where: {
+            activityId: {
+              in: activityIds,
+            },
+          },
+          _count: {
+            _all: true,
+          },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  return {
+    postReplies: new Map(
+      postReplies.map((item) => [item.rootId, Number(item.count)]),
+    ),
+    activityComments: new Map(
+      activityComments
+        .filter((item) => item.activityId)
+        .map((item) => [item.activityId as string, item._count._all]),
+    ),
+  };
 };
 
 export const getAchievementUnlockBook = async (

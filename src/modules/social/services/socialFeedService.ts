@@ -1,5 +1,6 @@
 import {
   getAchievementUnlockBook,
+  getSocialCommentCounts,
   getSocialFeed,
   getSocialFeedPosts,
 } from "../repositories/socialFeedRepository.js";
@@ -20,6 +21,11 @@ export const getSocialFeedService = async (
     getSocialFeed(currentUserId, fetchLimit, scope, profileUserId),
     getSocialFeedPosts(currentUserId, fetchLimit, scope, profileUserId),
   ]);
+
+  const { postReplies, activityComments } = await getSocialCommentCounts(
+    posts.map((post) => post.id),
+    activities.map((activity) => activity.id),
+  );
 
   const activityItems = await Promise.all(
     activities.map(async (activity) => {
@@ -58,6 +64,7 @@ export const getSocialFeedService = async (
 
         kudosCount: activity._count.kudos,
         hasKudos: activity.kudos.length > 0,
+        commentsCount: activityComments.get(activity.id) ?? 0,
 
         isOwnActivity: activity.user.id === currentUserId,
       };
@@ -75,7 +82,7 @@ export const getSocialFeedService = async (
     user: post.author,
     book: post.book,
 
-    repliesCount: post._count.replies,
+    repliesCount: postReplies.get(post.id) ?? 0,
 
     kudosCount: post._count.kudos,
     hasKudos: post.kudos.length > 0,

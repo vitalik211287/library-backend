@@ -3,11 +3,13 @@ import { getBookById } from "../../books/repositories/booksRepository.js";
 import {
   createSocialPost,
   deleteSocialPost,
+  getSocialActivityComments,
   getSocialPostById,
   getSocialPostDescendants,
   getSocialPostThreadById,
   updateSocialPost,
 } from "../repositories/socialPostRepository.js";
+import { getSocialActivityById } from "../repositories/socialFeedRepository.js";
 
 const MAX_POST_LENGTH = 1000;
 
@@ -16,6 +18,7 @@ type CreateSocialPostInput = {
   text: string;
   bookId?: string | null;
   parentId?: string | null;
+  activityId?: string | null;
 };
 
 export const createSocialPostService = async ({
@@ -23,6 +26,7 @@ export const createSocialPostService = async ({
   text,
   bookId = null,
   parentId = null,
+  activityId = null,
 }: CreateSocialPostInput) => {
   const normalizedText = text?.trim();
 
@@ -44,11 +48,21 @@ export const createSocialPostService = async ({
     }
   }
 
+  let resolvedActivityId = activityId;
+
   if (parentId) {
     const parentPost = await getSocialPostById(parentId);
 
     if (!parentPost) {
       throw new Error("Батьківський допис не знайдено");
+    }
+
+    resolvedActivityId = parentPost.activityId ?? null;
+  } else if (activityId) {
+    const activity = await getSocialActivityById(activityId);
+
+    if (!activity) {
+      throw new Error("Активність не знайдено");
     }
   }
 
@@ -57,7 +71,29 @@ export const createSocialPostService = async ({
     text: normalizedText,
     bookId,
     parentId,
+    activityId: resolvedActivityId,
   });
+};
+
+export const getSocialActivityThreadService = async (
+  activityId: string,
+  userId: string,
+) => {
+  const activity = await getSocialActivityById(activityId);
+
+  if (!activity) {
+    throw new Error("Активність не знайдено");
+  }
+
+  const comments = await getSocialActivityComments(activityId);
+
+  return {
+    activityId,
+    comments: comments.map((comment) => ({
+      ...comment,
+      isOwnPost: comment.authorId === userId,
+    })),
+  };
 };
 
 export const getSocialPostThreadService = async (postId: string) => {

@@ -5,6 +5,7 @@ type CreateSocialPostData = {
   text: string;
   bookId?: string | null;
   parentId?: string | null;
+  activityId?: string | null;
 };
 
 export const createSocialPost = async (data: CreateSocialPostData) => {
@@ -14,6 +15,7 @@ export const createSocialPost = async (data: CreateSocialPostData) => {
       text: data.text,
       bookId: data.bookId ?? null,
       parentId: data.parentId ?? null,
+      activityId: data.activityId ?? null,
     },
     include: {
       author: {
@@ -50,6 +52,36 @@ export const getSocialPostById = async (postId: string) => {
       id: true,
       authorId: true,
       parentId: true,
+      activityId: true,
+    },
+  });
+};
+
+export const getSocialActivityComments = async (activityId: string) => {
+  return prisma.socialPost.findMany({
+    where: {
+      activityId,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+    include: {
+      author: {
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+        },
+      },
+      book: {
+        select: {
+          id: true,
+          isbn: true,
+          title: true,
+          author: true,
+          coverUrl: true,
+        },
+      },
     },
   });
 };

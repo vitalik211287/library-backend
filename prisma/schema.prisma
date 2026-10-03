@@ -387,6 +387,9 @@ model SocialPost {
   parent   SocialPost?  @relation("SocialPostReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies  SocialPost[] @relation("SocialPostReplies")
 
+  activityId String?
+  activity   SocialActivity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
   kudos         PostKudos[]
   notifications Notification[]
 
@@ -396,6 +399,7 @@ model SocialPost {
   @@index([authorId, createdAt])
   @@index([bookId, createdAt])
   @@index([parentId, createdAt])
+  @@index([activityId, createdAt])
 }
 
 model SocialActivity {
@@ -417,6 +421,7 @@ model SocialActivity {
 
   kudos         ActivityKudos[]
   notifications Notification[]
+  comments      SocialPost[]
 
   @@unique([userId, type, achievementId])
   @@unique([userId, type, bookId])
