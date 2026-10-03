@@ -8,12 +8,16 @@ import { ACHIEVEMENTS } from "../../stats/services/getUserAchievementsService.js
 
 export const getSocialFeedService = async (
   currentUserId: string,
-  limit = 30,
+  limit = 20,
   scope = "all",
+  page = 1,
 ) => {
+  const offset = (page - 1) * limit;
+  const fetchLimit = offset + limit + 1;
+
   const [activities, posts] = await Promise.all([
-    getSocialFeed(currentUserId, limit, scope),
-    getSocialFeedPosts(currentUserId, limit, scope),
+    getSocialFeed(currentUserId, fetchLimit, scope),
+    getSocialFeedPosts(currentUserId, fetchLimit, scope),
   ]);
 
   const activityItems = await Promise.all(
@@ -78,7 +82,16 @@ export const getSocialFeedService = async (
     isOwnPost: post.author.id === currentUserId,
   }));
 
-  return [...activityItems, ...postItems]
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .slice(0, limit);
+  const sortedItems = [...activityItems, ...postItems].sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+  );
+
+  const pageItems = sortedItems.slice(offset, offset + limit);
+  const hasMore = sortedItems.length > offset + limit;
+
+  return {
+    activities: pageItems,
+    page,
+    hasMore,
+  };
 };

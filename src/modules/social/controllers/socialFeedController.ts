@@ -18,11 +18,31 @@ export const getSocialFeedController = async (
     const scope =
       req.query.scope === "following" ? "following" : "all";
 
-    const activities = await getSocialFeedService(userId, 30, scope);
+    const requestedPage = Number(req.query.page);
+    const requestedLimit = Number(req.query.limit);
+
+    const page =
+      Number.isInteger(requestedPage) && requestedPage > 0
+        ? requestedPage
+        : 1;
+
+    const limit =
+      Number.isInteger(requestedLimit) && requestedLimit > 0
+        ? Math.min(requestedLimit, 50)
+        : 20;
+
+    const result = await getSocialFeedService(
+      userId,
+      limit,
+      scope,
+      page,
+    );
 
     return res.status(200).json({
-      count: activities.length,
-      activities,
+      count: result.activities.length,
+      activities: result.activities,
+      page: result.page,
+      hasMore: result.hasMore,
     });
   } catch (error) {
     console.error("Get social feed error:", error);
