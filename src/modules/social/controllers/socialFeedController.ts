@@ -15,7 +15,10 @@ export const getSocialFeedController = async (
       });
     }
 
-    const activities = await getSocialFeedService(userId);
+    const scope =
+      req.query.scope === "following" ? "following" : "all";
+
+    const activities = await getSocialFeedService(userId, 30, scope);
 
     return res.status(200).json({
       count: activities.length,

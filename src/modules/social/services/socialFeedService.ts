@@ -9,10 +9,11 @@ import { ACHIEVEMENTS } from "../../stats/services/getUserAchievementsService.js
 export const getSocialFeedService = async (
   currentUserId: string,
   limit = 30,
+  scope = "all",
 ) => {
   const [activities, posts] = await Promise.all([
-    getSocialFeed(currentUserId, limit),
-    getSocialFeedPosts(currentUserId, limit),
+    getSocialFeed(currentUserId, limit, scope),
+    getSocialFeedPosts(currentUserId, limit, scope),
   ]);
 
   const activityItems = await Promise.all(
