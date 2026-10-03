@@ -18,6 +18,11 @@ export const getSocialFeedController = async (
     const scope =
       req.query.scope === "following" ? "following" : "all";
 
+    const profileUserId =
+      typeof req.query.userId === "string" && req.query.userId.trim()
+        ? req.query.userId.trim()
+        : undefined;
+
     const requestedPage = Number(req.query.page);
     const requestedLimit = Number(req.query.limit);
 
@@ -36,6 +41,7 @@ export const getSocialFeedController = async (
       limit,
       scope,
       page,
+      profileUserId,
     );
 
     return res.status(200).json({

@@ -11,13 +11,14 @@ export const getSocialFeedService = async (
   limit = 20,
   scope = "all",
   page = 1,
+  profileUserId?: string,
 ) => {
   const offset = (page - 1) * limit;
   const fetchLimit = offset + limit + 1;
 
   const [activities, posts] = await Promise.all([
-    getSocialFeed(currentUserId, fetchLimit, scope),
-    getSocialFeedPosts(currentUserId, fetchLimit, scope),
+    getSocialFeed(currentUserId, fetchLimit, scope, profileUserId),
+    getSocialFeedPosts(currentUserId, fetchLimit, scope, profileUserId),
   ]);
 
   const activityItems = await Promise.all(

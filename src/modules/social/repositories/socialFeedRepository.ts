@@ -1,9 +1,15 @@
 import prisma from "../../../utils/prisma.js";
 
-export const getSocialFeed = async (currentUserId: string, limit = 30, scope = "all") => {
+export const getSocialFeed = async (
+  currentUserId: string,
+  limit = 30,
+  scope = "all",
+  profileUserId?: string,
+) => {
   return prisma.socialActivity.findMany({
-    where:
-      scope === "following"
+    where: profileUserId
+      ? { userId: profileUserId }
+      : scope === "following"
         ? {
             OR: [
               { userId: currentUserId },
@@ -68,12 +74,19 @@ export const getSocialFeed = async (currentUserId: string, limit = 30, scope = "
   });
 };
 
-export const getSocialFeedPosts = async (currentUserId: string, limit = 30, scope = "all") => {
+export const getSocialFeedPosts = async (
+  currentUserId: string,
+  limit = 30,
+  scope = "all",
+  profileUserId?: string,
+) => {
   return prisma.socialPost.findMany({
     where: {
       parentId: null,
-      ...(scope === "following"
-        ? {
+      ...(profileUserId
+        ? { authorId: profileUserId }
+        : scope === "following"
+          ? {
             OR: [
               { authorId: currentUserId },
               {
@@ -85,7 +98,7 @@ export const getSocialFeedPosts = async (currentUserId: string, limit = 30, scop
               },
             ],
           }
-        : {}),
+          : {}),
     },
 
     select: {
