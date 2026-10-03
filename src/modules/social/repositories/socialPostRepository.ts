@@ -54,6 +54,56 @@ export const getSocialPostById = async (postId: string) => {
   });
 };
 
+export const getSocialPostDescendants = async (postId: string) => {
+  const descendants = [];
+  let parentIds = [postId];
+
+  while (parentIds.length > 0) {
+    const replies = await prisma.socialPost.findMany({
+      where: {
+        parentId: {
+          in: parentIds,
+        },
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+          },
+        },
+        book: {
+          select: {
+            id: true,
+            isbn: true,
+            title: true,
+            author: true,
+            coverUrl: true,
+          },
+        },
+        _count: {
+          select: {
+            replies: true,
+          },
+        },
+      },
+    });
+
+    if (replies.length === 0) {
+      break;
+    }
+
+    descendants.push(...replies);
+    parentIds = replies.map((reply) => reply.id);
+  }
+
+  return descendants;
+};
+
 export const getSocialPostThreadById = async (postId: string) => {
   return prisma.socialPost.findUnique({
     where: {

@@ -4,6 +4,7 @@ import {
   createSocialPost,
   deleteSocialPost,
   getSocialPostById,
+  getSocialPostDescendants,
   getSocialPostThreadById,
   updateSocialPost,
 } from "../repositories/socialPostRepository.js";
@@ -49,10 +50,6 @@ export const createSocialPostService = async ({
     if (!parentPost) {
       throw new Error("Батьківський допис не знайдено");
     }
-
-    if (parentPost.parentId) {
-      throw new Error("Відповідати можна лише на основний допис");
-    }
   }
 
   return createSocialPost({
@@ -70,7 +67,12 @@ export const getSocialPostThreadService = async (postId: string) => {
     throw new Error("Допис не знайдено");
   }
 
-  return post;
+  const replies = await getSocialPostDescendants(postId);
+
+  return {
+    ...post,
+    replies,
+  };
 };
 
 type UpdateSocialPostInput = {

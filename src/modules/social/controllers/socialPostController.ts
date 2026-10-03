@@ -38,7 +38,6 @@ export const createSocialPostController = async (
         error.message === "Батьківський допис не знайдено"
           ? 404
           : error.message === "Текст допису не може бути порожнім" ||
-              error.message === "Відповідати можна лише на основний допис" ||
               error.message.startsWith("Текст допису не може перевищувати")
             ? 400
             : 500;
@@ -77,7 +76,14 @@ export const getSocialPostThreadController = async (
 
     const post = await getSocialPostThreadService(postId);
 
-    return res.status(200).json(post);
+    return res.status(200).json({
+      ...post,
+      isOwnPost: post.authorId === userId,
+      replies: post.replies.map((reply) => ({
+        ...reply,
+        isOwnPost: reply.authorId === userId,
+      })),
+    });
   } catch (error) {
     console.error("Get social post thread error:", error);
 
