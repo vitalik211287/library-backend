@@ -7,6 +7,17 @@ export const createNotification = async (data: {
   activityId?: string | null;
   postId?: string | null;
 }) => {
+  if (data.type === "POST_COMMENT" && data.postId) {
+    return prisma.notification.create({
+      data: {
+        userId: data.userId,
+        actorId: data.actorId,
+        type: data.type,
+        postId: data.postId,
+      },
+    });
+  }
+
   if (data.postId) {
     return prisma.notification.upsert({
       where: {
