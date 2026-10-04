@@ -6,10 +6,12 @@ import {
   getSocialActivityComments,
   getSocialPostById,
   getSocialPostDescendants,
+  getSocialPostRoot,
   getSocialPostThreadById,
   updateSocialPost,
 } from "../repositories/socialPostRepository.js";
 import { getSocialActivityById } from "../repositories/socialFeedRepository.js";
+import { createPostCommentNotificationService } from "../../notifications/services/notificationsService.js";
 
 const MAX_POST_LENGTH = 1000;
 
@@ -66,13 +68,28 @@ export const createSocialPostService = async ({
     }
   }
 
-  return createSocialPost({
+  const post = await createSocialPost({
     authorId,
     text: normalizedText,
     bookId,
     parentId,
     activityId: resolvedActivityId,
   });
+
+  if (parentId && !resolvedActivityId) {
+    const parentPost = await getSocialPostById(parentId);
+    const rootPost = await getSocialPostRoot(parentId);
+
+    if (parentPost && rootPost) {
+      await createPostCommentNotificationService({
+        recipientUserId: parentPost.authorId,
+        actorUserId: authorId,
+        postId: rootPost.id,
+      });
+    }
+  }
+
+  return post;
 };
 
 export const getSocialActivityThreadService = async (

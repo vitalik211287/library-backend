@@ -367,6 +367,7 @@ enum NotificationScope {
 
 enum NotificationType {
   KUDOS_RECEIVED
+  POST_COMMENT
   NEW_FOLLOWER
   LIBRARY_BOOK_ADDED
   SOCIAL_ACTIVITY

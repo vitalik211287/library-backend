@@ -57,6 +57,26 @@ export const getSocialPostById = async (postId: string) => {
   });
 };
 
+export const getSocialPostRoot = async (postId: string) => {
+  let post = await getSocialPostById(postId);
+
+  if (!post) {
+    return null;
+  }
+
+  while (post.parentId) {
+    const parent = await getSocialPostById(post.parentId);
+
+    if (!parent) {
+      break;
+    }
+
+    post = parent;
+  }
+
+  return post;
+};
+
 export const getSocialActivityComments = async (activityId: string) => {
   return prisma.socialPost.findMany({
     where: {

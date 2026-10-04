@@ -1,4 +1,5 @@
 import { ACHIEVEMENTS } from "../../stats/services/getUserAchievementsService.js";
+import { emitNotificationNew } from "../../../realtime/socket.js";
 import {
   createNotification,
   deleteNotifications,
@@ -51,6 +52,31 @@ export const createPostKudosNotificationService = async ({
     type: "KUDOS_RECEIVED",
     postId,
   });
+};
+
+export const createPostCommentNotificationService = async ({
+  recipientUserId,
+  actorUserId,
+  postId,
+}: {
+  recipientUserId: string;
+  actorUserId: string;
+  postId: string;
+}) => {
+  if (recipientUserId === actorUserId) {
+    return null;
+  }
+
+  const notification = await createNotification({
+    userId: recipientUserId,
+    actorId: actorUserId,
+    type: "POST_COMMENT",
+    postId,
+  });
+
+  emitNotificationNew(recipientUserId);
+
+  return notification;
 };
 
 export const createNewFollowerNotificationService = async ({

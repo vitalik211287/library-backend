@@ -3,7 +3,7 @@ import prisma from "../../../utils/prisma.js";
 export const createNotification = async (data: {
   userId: string;
   actorId: string;
-  type: "KUDOS_RECEIVED" | "NEW_FOLLOWER";
+  type: "KUDOS_RECEIVED" | "POST_COMMENT" | "NEW_FOLLOWER";
   activityId?: string | null;
   postId?: string | null;
 }) => {
