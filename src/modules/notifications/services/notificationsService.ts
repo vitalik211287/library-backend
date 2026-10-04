@@ -27,12 +27,16 @@ export const createKudosNotificationService = async ({
     return null;
   }
 
-  return createNotification({
+  const notification = await createNotification({
     userId: recipientUserId,
     actorId: actorUserId,
     type: "KUDOS_RECEIVED",
     activityId,
   });
+
+  emitNotificationNew(recipientUserId);
+
+  return notification;
 };
 
 export const createPostKudosNotificationService = async ({
@@ -48,12 +52,16 @@ export const createPostKudosNotificationService = async ({
     return null;
   }
 
-  return createNotification({
+  const notification = await createNotification({
     userId: recipientUserId,
     actorId: actorUserId,
     type: "KUDOS_RECEIVED",
     postId,
   });
+
+  emitNotificationNew(recipientUserId);
+
+  return notification;
 };
 
 export const createPostCommentNotificationService = async ({
@@ -102,11 +110,15 @@ export const createNewFollowerNotificationService = async ({
     return null;
   }
 
-  return createNotification({
+  const notification = await createNotification({
     userId: recipientUserId,
     actorId: actorUserId,
     type: "NEW_FOLLOWER",
   });
+
+  emitNotificationNew(recipientUserId);
+
+  return notification;
 };
 
 export const getNotificationsService = async (userId: string) => {
@@ -165,12 +177,18 @@ export const createLibraryBookAddedNotificationsService = async ({
     ...new Set(memberUserIds.filter((userId) => userId !== actorUserId)),
   ];
 
-  return createLibraryNotifications({
+  const notifications = await createLibraryNotifications({
     recipientUserIds,
     actorId: actorUserId,
     libraryId,
     bookId,
   });
+
+  recipientUserIds.forEach((userId) => {
+    emitNotificationNew(userId);
+  });
+
+  return notifications;
 };
 export const createSocialActivityNotificationsService = async ({
   actorUserId,
@@ -191,12 +209,18 @@ export const createSocialActivityNotificationsService = async ({
     ),
   ];
 
-  return createSocialActivityNotifications({
+  const notifications = await createSocialActivityNotifications({
     recipientUserIds,
     actorId: actorUserId,
     activityId,
     bookId: bookId ?? null,
   });
+
+  recipientUserIds.forEach((userId) => {
+    emitNotificationNew(userId);
+  });
+
+  return notifications;
 };
 
 export const deleteNotificationsService = async (
