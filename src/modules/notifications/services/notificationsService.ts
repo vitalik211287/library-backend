@@ -1,5 +1,7 @@
 import { ACHIEVEMENTS } from "../../stats/services/getUserAchievementsService.js";
 import { emitNotificationNew } from "../../../realtime/socket.js";
+import { getUserById } from "../../users/repositories/usersRepository.js";
+import { sendPushToUser } from "./pushService.js";
 import {
   createNotification,
   deleteNotifications,
@@ -75,6 +77,16 @@ export const createPostCommentNotificationService = async ({
   });
 
   emitNotificationNew(recipientUserId);
+
+  const actor = await getUserById(actorUserId);
+  const actorName = actor?.name?.trim() || "Користувач";
+
+  await sendPushToUser(recipientUserId, {
+    title: "Бібліотека",
+    body: `${actorName} прокоментував ваш допис`,
+    url: `/community?postId=${postId}`,
+    tag: `post-comment-${postId}`,
+  });
 
   return notification;
 };
