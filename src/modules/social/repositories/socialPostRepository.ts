@@ -156,6 +156,12 @@ export const getSocialPostDescendants = async (postId: string) => {
   return descendants;
 };
 
+export const countSocialPostDescendants = async (postId: string) => {
+  const descendants = await getSocialPostDescendants(postId);
+
+  return descendants.length;
+};
+
 export const getSocialPostThreadById = async (postId: string) => {
   return prisma.socialPost.findUnique({
     where: {

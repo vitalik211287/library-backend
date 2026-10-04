@@ -1,6 +1,7 @@
 import { getBookById } from "../../books/repositories/booksRepository.js";
 
 import {
+  countSocialPostDescendants,
   createSocialPost,
   deleteSocialPost,
   getSocialActivityComments,
@@ -12,6 +13,7 @@ import {
 } from "../repositories/socialPostRepository.js";
 import { getSocialActivityById } from "../repositories/socialFeedRepository.js";
 import { createPostCommentNotificationService } from "../../notifications/services/notificationsService.js";
+import { emitPostCommentsUpdated } from "../../../realtime/socket.js";
 
 const MAX_POST_LENGTH = 1000;
 
@@ -86,6 +88,10 @@ export const createSocialPostService = async ({
         actorUserId: authorId,
         postId: rootPost.id,
       });
+
+      const commentsCount = await countSocialPostDescendants(rootPost.id);
+
+      emitPostCommentsUpdated(rootPost.id, commentsCount);
     }
   }
 
@@ -191,7 +197,18 @@ export const deleteSocialPostService = async (
     throw new Error("Ви не можете видалити чужий допис");
   }
 
+  const rootPost =
+    post.parentId && !post.activityId
+      ? await getSocialPostRoot(postId)
+      : null;
+
   await deleteSocialPost(postId);
+
+  if (rootPost) {
+    const commentsCount = await countSocialPostDescendants(rootPost.id);
+
+    emitPostCommentsUpdated(rootPost.id, commentsCount);
+  }
 
   return {
     success: true,

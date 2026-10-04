@@ -60,6 +60,16 @@ export const emitNotificationNew = (userId: string) => {
   getSocket().to(`user:${userId}`).emit("notification:new");
 };
 
+export const emitPostCommentsUpdated = (
+  postId: string,
+  commentsCount: number,
+) => {
+  getSocket().emit("post:comments-updated", {
+    postId,
+    commentsCount,
+  });
+};
+
 export const emitPostKudosUpdated = (
   postId: string,
   kudosCount: number,
