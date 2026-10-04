@@ -1,6 +1,7 @@
 import { getBookById } from "../../books/repositories/booksRepository.js";
 
 import {
+  countSocialActivityComments,
   countSocialPostDescendants,
   createSocialPost,
   deleteSocialPost,
@@ -13,7 +14,10 @@ import {
 } from "../repositories/socialPostRepository.js";
 import { getSocialActivityById } from "../repositories/socialFeedRepository.js";
 import { createPostCommentNotificationService } from "../../notifications/services/notificationsService.js";
-import { emitPostCommentsUpdated } from "../../../realtime/socket.js";
+import {
+  emitActivityCommentsUpdated,
+  emitPostCommentsUpdated,
+} from "../../../realtime/socket.js";
 
 const MAX_POST_LENGTH = 1000;
 
@@ -77,6 +81,13 @@ export const createSocialPostService = async ({
     parentId,
     activityId: resolvedActivityId,
   });
+
+  if (resolvedActivityId) {
+    const commentsCount =
+      await countSocialActivityComments(resolvedActivityId);
+
+    emitActivityCommentsUpdated(resolvedActivityId, commentsCount);
+  }
 
   if (parentId && !resolvedActivityId) {
     const parentPost = await getSocialPostById(parentId);
@@ -202,7 +213,15 @@ export const deleteSocialPostService = async (
       ? await getSocialPostRoot(postId)
       : null;
 
+  const activityId = post.activityId;
+
   await deleteSocialPost(postId);
+
+  if (activityId) {
+    const commentsCount = await countSocialActivityComments(activityId);
+
+    emitActivityCommentsUpdated(activityId, commentsCount);
+  }
 
   if (rootPost) {
     const commentsCount = await countSocialPostDescendants(rootPost.id);

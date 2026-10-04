@@ -77,6 +77,14 @@ export const getSocialPostRoot = async (postId: string) => {
   return post;
 };
 
+export const countSocialActivityComments = async (activityId: string) => {
+  return prisma.socialPost.count({
+    where: {
+      activityId,
+    },
+  });
+};
+
 export const getSocialActivityComments = async (activityId: string) => {
   return prisma.socialPost.findMany({
     where: {
