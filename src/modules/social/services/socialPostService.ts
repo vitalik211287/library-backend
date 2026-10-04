@@ -83,6 +83,26 @@ export const createSocialPostService = async ({
   });
 
   if (resolvedActivityId) {
+    const activity = await getSocialActivityById(resolvedActivityId);
+
+    if (activity) {
+      let recipientUserId = activity.userId;
+
+      if (parentId) {
+        const parentPost = await getSocialPostById(parentId);
+
+        if (parentPost) {
+          recipientUserId = parentPost.authorId;
+        }
+      }
+
+      await createPostCommentNotificationService({
+        recipientUserId,
+        actorUserId: authorId,
+        activityId: resolvedActivityId,
+      });
+    }
+
     const commentsCount =
       await countSocialActivityComments(resolvedActivityId);
 

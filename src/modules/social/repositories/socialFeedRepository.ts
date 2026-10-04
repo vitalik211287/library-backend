@@ -8,6 +8,7 @@ export const getSocialActivityById = async (activityId: string) => {
     },
     select: {
       id: true,
+      userId: true,
     },
   });
 };

@@ -49,23 +49,41 @@ export const createNotification = async (data: {
       },
     });
   }
+  if (data.type === "POST_COMMENT" && data.activityId) {
+    return prisma.notification.create({
+      data: {
+        userId: data.userId,
+        actorId: data.actorId,
+        type: data.type,
+        activityId: data.activityId,
+      },
+    });
+  }
+
   if (data.activityId) {
-    return prisma.notification.upsert({
+    const existingNotification = await prisma.notification.findFirst({
       where: {
-        userId_actorId_type_activityId: {
-          userId: data.userId,
-          actorId: data.actorId,
-          type: data.type,
-          activityId: data.activityId,
+        userId: data.userId,
+        actorId: data.actorId,
+        type: data.type,
+        activityId: data.activityId,
+      },
+    });
+
+    if (existingNotification) {
+      return prisma.notification.update({
+        where: {
+          id: existingNotification.id,
         },
-      },
+        data: {
+          isRead: false,
+          createdAt: new Date(),
+        },
+      });
+    }
 
-      update: {
-        isRead: false,
-        createdAt: new Date(),
-      },
-
-      create: {
+    return prisma.notification.create({
+      data: {
         userId: data.userId,
         actorId: data.actorId,
         type: data.type,

@@ -492,7 +492,6 @@ model Notification {
 
   createdAt DateTime @default(now())
 
-  @@unique([userId, actorId, type, activityId])
   @@index([userId, isRead, createdAt])
   @@index([actorId, createdAt])
   @@index([activityId])

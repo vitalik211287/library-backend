@@ -68,32 +68,44 @@ export const createPostCommentNotificationService = async ({
   recipientUserId,
   actorUserId,
   postId,
+  activityId,
 }: {
   recipientUserId: string;
   actorUserId: string;
-  postId: string;
+  postId?: string | null;
+  activityId?: string | null;
 }) => {
   if (recipientUserId === actorUserId) {
     return null;
+  }
+
+  if (!postId && !activityId) {
+    throw new Error("Comment notification target is required");
   }
 
   const notification = await createNotification({
     userId: recipientUserId,
     actorId: actorUserId,
     type: "POST_COMMENT",
-    postId,
+    postId: postId ?? null,
+    activityId: activityId ?? null,
   });
 
   emitNotificationNew(recipientUserId);
 
   const actor = await getUserById(actorUserId);
-  const actorName = actor?.name?.trim() || "Користувач";
+  const actorName =
+    actor?.name?.trim() || "Користувач";
+
+  const url = postId
+    ? `/community?postId=${postId}`
+    : `/community?activityId=${activityId}`;
 
   await sendPushToUser(recipientUserId, {
     title: "Бібліотека",
     body: `${actorName} прокоментував ваш допис`,
-    url: `/community?postId=${postId}`,
-    tag: `post-comment-${postId}`,
+    url,
+    tag: `post-comment-${notification.id}`,
   });
 
   return notification;
