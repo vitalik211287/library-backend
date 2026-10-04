@@ -19,22 +19,29 @@ export const createNotification = async (data: {
   }
 
   if (data.postId) {
-    return prisma.notification.upsert({
+    const existingNotification = await prisma.notification.findFirst({
       where: {
-        userId_actorId_type_postId: {
-          userId: data.userId,
-          actorId: data.actorId,
-          type: data.type,
-          postId: data.postId,
+        userId: data.userId,
+        actorId: data.actorId,
+        type: data.type,
+        postId: data.postId,
+      },
+    });
+
+    if (existingNotification) {
+      return prisma.notification.update({
+        where: {
+          id: existingNotification.id,
         },
-      },
+        data: {
+          isRead: false,
+          createdAt: new Date(),
+        },
+      });
+    }
 
-      update: {
-        isRead: false,
-        createdAt: new Date(),
-      },
-
-      create: {
+    return prisma.notification.create({
+      data: {
         userId: data.userId,
         actorId: data.actorId,
         type: data.type,
