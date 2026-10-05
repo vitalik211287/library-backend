@@ -148,6 +148,12 @@ export const getSocialPostDescendants = async (postId: string) => {
         _count: {
           select: {
             replies: true,
+            kudos: true,
+          },
+        },
+        kudos: {
+          select: {
+            userId: true,
           },
         },
       },

@@ -116,7 +116,7 @@ export const getSocialPostThreadController = async (
       });
     }
 
-    const post = await getSocialPostThreadService(postId);
+    const post = await getSocialPostThreadService(postId, userId);
 
     return res.status(200).json({
       ...post,

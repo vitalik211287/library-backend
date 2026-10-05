@@ -150,7 +150,7 @@ export const getSocialActivityThreadService = async (
   };
 };
 
-export const getSocialPostThreadService = async (postId: string) => {
+export const getSocialPostThreadService = async (postId: string, userId: string) => {
   const post = await getSocialPostThreadById(postId);
 
   if (!post) {
@@ -161,7 +161,12 @@ export const getSocialPostThreadService = async (postId: string) => {
 
   return {
     ...post,
-    replies,
+    replies: replies.map(({ kudos, _count, ...reply }) => ({
+      ...reply,
+      _count,
+      kudosCount: _count.kudos,
+      hasKudos: kudos.some((item) => item.userId === userId),
+    })),
   };
 };
 
