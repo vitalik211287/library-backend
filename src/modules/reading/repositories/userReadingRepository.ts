@@ -2,6 +2,8 @@ import prisma from "../../../utils/prisma.js";
 
 import type { Prisma, ProgressMode } from "@prisma/client";
 
+import { getTotalPausedSeconds } from "../utils/readingSessionTime.js";
+
 type DbClient = Prisma.TransactionClient | typeof prisma;
 
 export const getActiveUserReadingSession = async (
@@ -66,9 +68,10 @@ export const resumeUserReadingSession = async (
   pausedAt: Date,
   pausedSeconds: number,
 ) => {
-  const currentPauseSeconds = Math.max(
-    Math.floor((Date.now() - pausedAt.getTime()) / 1000),
-    0,
+  const totalPausedSeconds = getTotalPausedSeconds(
+    pausedSeconds,
+    pausedAt,
+    new Date(),
   );
 
   return prisma.readingSession.update({
@@ -79,7 +82,7 @@ export const resumeUserReadingSession = async (
     data: {
       pausedAt: null,
 
-      pausedSeconds: pausedSeconds + currentPauseSeconds,
+      pausedSeconds: totalPausedSeconds,
     },
   });
 };

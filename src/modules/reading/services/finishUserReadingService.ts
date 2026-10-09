@@ -7,6 +7,8 @@ import {
   getActiveUserReadingSession,
 } from "../repositories/userReadingRepository.js";
 
+import { calculateReadingSessionTime } from "../utils/readingSessionTime.js";
+
 type FinishReadingData = {
   endPage?: number;
   endPercent?: number;
@@ -80,23 +82,13 @@ export const finishUserReadingService = async (
      SESSION TIME
   ========================= */
 
-  const totalElapsedSeconds = Math.max(
-    Math.floor((Date.now() - session.startedAt.getTime()) / 1000),
-    0,
-  );
-
-  let totalPausedSeconds = session.pausedSeconds;
-
-  if (session.pausedAt) {
-    const currentPauseSeconds = Math.max(
-      Math.floor((Date.now() - session.pausedAt.getTime()) / 1000),
-      0,
+  const { durationSeconds, pausedSeconds: totalPausedSeconds } =
+    calculateReadingSessionTime(
+      session.startedAt,
+      session.pausedAt,
+      session.pausedSeconds,
+      new Date(),
     );
-
-    totalPausedSeconds += currentPauseSeconds;
-  }
-
-  const durationSeconds = Math.max(totalElapsedSeconds - totalPausedSeconds, 0);
 
   /* =========================
      FINISH SESSION
