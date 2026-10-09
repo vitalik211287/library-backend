@@ -13,3 +13,30 @@ export const uploadBookCover = async (
 
   return result.secure_url;
 };
+
+export const uploadBookCoverBuffer = (
+  buffer: Buffer,
+): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "library/covers",
+        resource_type: "image",
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        if (!result) {
+          reject(new Error("Cloudinary upload failed"));
+          return;
+        }
+
+        resolve(result.secure_url);
+      },
+    );
+
+    stream.end(buffer);
+  });

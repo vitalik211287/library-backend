@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 
 import type { LibraryRole } from "@prisma/client";
 
-import cloudinary from "../../../config/cloudinary.js";
+import { uploadBookCoverBuffer } from "../../../utils/uploadBookCover.js";
 
 import {
   addBookToLibraryService,
@@ -434,37 +434,7 @@ export const addBookToLibraryController = async (
     let coverUrl: string | undefined;
 
     if (req.file) {
-      const result = await new Promise<{
-        secure_url: string;
-      }>((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            folder: "library/covers",
-            resource_type: "image",
-          },
-          (error, result) => {
-            if (error) {
-              reject(error);
-
-              return;
-            }
-
-            if (!result) {
-              reject(new Error("Cloudinary upload failed"));
-
-              return;
-            }
-
-            resolve({
-              secure_url: result.secure_url,
-            });
-          },
-        );
-
-        uploadStream.end(req.file?.buffer);
-      });
-
-      coverUrl = result.secure_url;
+      coverUrl = await uploadBookCoverBuffer(req.file.buffer);
     }
 
     const book = await addBookToLibraryService(
@@ -582,41 +552,13 @@ export const updateLibraryBookCoverController = async (
      */
     await assertCanEditLibraryBookService(userId, libraryId, bookId);
 
-    const result = await new Promise<{
-      secure_url: string;
-    }>((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: "library/covers",
-          resource_type: "image",
-        },
-        (error, result) => {
-          if (error) {
-            reject(error);
-
-            return;
-          }
-
-          if (!result) {
-            reject(new Error("Cloudinary upload failed"));
-
-            return;
-          }
-
-          resolve({
-            secure_url: result.secure_url,
-          });
-        },
-      );
-
-      uploadStream.end(req.file?.buffer);
-    });
+    const coverUrl = await uploadBookCoverBuffer(req.file.buffer);
 
     const book = await updateLibraryBookCoverService(
       userId,
       libraryId,
       bookId,
-      result.secure_url,
+      coverUrl,
     );
 
     return res.status(200).json(book);
