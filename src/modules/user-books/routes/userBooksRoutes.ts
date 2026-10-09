@@ -9,8 +9,10 @@ import { startUserReadingController } from "../../reading/controllers/startUserR
 import { finishUserReadingController } from "../../reading/controllers/finishUserReadingController.js";
 import { getActiveUserReadingSessionController } from "../../reading/controllers/getActiveUserReadingSessionController.js";
 import { getUserReadingStatsController } from "../../reading/controllers/getUserReadingStatsController.js";
-import { pauseUserReadingController } from "../../reading/controllers/pauseUserReadingController.js";
-import { resumeUserReadingController } from "../../reading/controllers/resumeUserReadingController.js";
+import {
+  pauseUserReadingController,
+  resumeUserReadingController,
+} from "../../reading/controllers/pauseResumeReadingController.js";
 import { importUserReadingController } from "../../reading/controllers/importUserReadingController.js";
 
 import { getUserReadingSessionsController } from "../../reading/controllers/getUserReadingSessionsController.js";
