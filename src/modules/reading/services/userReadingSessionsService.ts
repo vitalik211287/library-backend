@@ -70,8 +70,16 @@ export const updateUserReadingSessionService = async (
   const isLatestSession = latestSession?.id === session.id;
 
   const previousEndPage = session.endPage;
-
   const previousEndPercent = session.endPercent;
+
+  let sessionProgress: {
+    endPage?: number;
+    endPercent?: number;
+  };
+
+  let bookProgress:
+    | { progressMode: "PAGES"; currentPage: number }
+    | { progressMode: "PERCENT"; currentPercent: number };
 
   if (session.progressMode === "PAGES") {
     if (data.endPage === undefined) {
@@ -90,90 +98,64 @@ export const updateUserReadingSessionService = async (
       throw new Error("End page cannot be greater than total book pages");
     }
 
-    const endPage = data.endPage;
-
-    const updatedSession = await prisma.$transaction(async (tx) => {
-      const updatedSession = await updateUserReadingSessionProgress(
-        session.id,
-        {
-          endPage,
-        },
-        tx,
-      );
-
-    const userBookPointsToSession =
-      previousEndPage !== null &&
-      userBook.progressMode === "PAGES" &&
-      userBook.currentPage === previousEndPage;
-
-    if (isLatestSession && userBookPointsToSession) {
-      await updateUserBookService(
-        userId,
-        bookId,
-        {
-          progressMode: "PAGES",
-          currentPage: endPage,
-        },
-        tx,
-      );
+    sessionProgress = { endPage: data.endPage };
+    bookProgress = {
+      progressMode: "PAGES",
+      currentPage: data.endPage,
+    };
+  } else {
+    if (data.endPercent === undefined) {
+      throw new Error("End percent is required");
     }
 
-      return updatedSession;
-    });
+    if (!Number.isFinite(data.endPercent)) {
+      throw new Error("End percent must be a number");
+    }
 
-    return updatedSession;
+    if (data.endPercent < 0 || data.endPercent > 100) {
+      throw new Error("End percent must be between 0 and 100");
+    }
+
+    const startPercent = session.startPercent ?? 0;
+
+    if (data.endPercent < startPercent) {
+      throw new Error("End percent cannot be less than start percent");
+    }
+
+    sessionProgress = { endPercent: data.endPercent };
+    bookProgress = {
+      progressMode: "PERCENT",
+      currentPercent: data.endPercent,
+    };
   }
 
-  if (data.endPercent === undefined) {
-    throw new Error("End percent is required");
-  }
+  const userBookPointsToSession =
+    session.progressMode === "PAGES"
+      ? previousEndPage !== null &&
+        userBook.progressMode === "PAGES" &&
+        userBook.currentPage === previousEndPage
+      : previousEndPercent !== null &&
+        userBook.progressMode === "PERCENT" &&
+        userBook.currentPercent === previousEndPercent;
 
-  if (!Number.isFinite(data.endPercent)) {
-    throw new Error("End percent must be a number");
-  }
-
-  if (data.endPercent < 0 || data.endPercent > 100) {
-    throw new Error("End percent must be between 0 and 100");
-  }
-
-  const startPercent = session.startPercent ?? 0;
-
-  if (data.endPercent < startPercent) {
-    throw new Error("End percent cannot be less than start percent");
-  }
-
-  const endPercent = data.endPercent;
-
-  const updatedSession = await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     const updatedSession = await updateUserReadingSessionProgress(
       session.id,
-      {
-        endPercent,
-      },
+      sessionProgress,
       tx,
     );
 
-    const userBookPointsToSession =
-      previousEndPercent !== null &&
-      userBook.progressMode === "PERCENT" &&
-      userBook.currentPercent === previousEndPercent;
-
     if (isLatestSession && userBookPointsToSession) {
       await updateUserBookService(
         userId,
         bookId,
-        {
-          progressMode: "PERCENT",
-          currentPercent: endPercent,
-        },
+        bookProgress,
         tx,
       );
     }
 
     return updatedSession;
   });
-
-  return updatedSession;
 };
 
 export const deleteUserReadingSessionService = async (
