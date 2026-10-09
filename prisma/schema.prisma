@@ -79,6 +79,7 @@ model User {
   notificationsReceived Notification[]     @relation("NotificationRecipient")
   notificationsSent     Notification[]     @relation("NotificationActor")
   pushSubscriptions     PushSubscription[]
+  bookFilesUploaded     BookFile[]
 }
 
 model UserSocialPreference {
@@ -276,12 +277,42 @@ model LibraryBook {
   coverUrl    String?
   description String?
 
+  files BookFile[]
+
   addedAt   DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([libraryId, bookId])
   @@index([libraryId])
   @@index([bookId])
+}
+
+enum BookFileFormat {
+  EPUB
+  FB2
+  PDF
+}
+
+model BookFile {
+  id String @id @default(uuid())
+
+  libraryBookId String
+  libraryBook   LibraryBook @relation(fields: [libraryBookId], references: [id], onDelete: Cascade)
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  format     BookFileFormat
+  fileName   String
+  storageKey String         @unique
+  mimeType   String
+  sizeBytes  BigInt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([libraryBookId])
+  @@index([uploadedById])
 }
 
 enum LibraryBookEventType {

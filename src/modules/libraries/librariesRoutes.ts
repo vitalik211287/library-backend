@@ -1,3 +1,7 @@
+import { canUploadBookFile } from "../bookFiles/middlewares/canUploadBookFile.js";
+
+import { handleEbookUpload } from "../bookFiles/middlewares/handleEbookUpload.js";
+import { addBookFileController, getBookFilesController, downloadBookFileController } from "../bookFiles/controllers/bookFilesController.js";
 import type { NextFunction, Request, Response } from "express";
 
 import { Router } from "express";
@@ -111,7 +115,7 @@ librariesRouter.delete(
 ========================= */
 
 /*
- * Весь effective catalog.
+ * Р’РµСЃСЊ effective catalog.
  */
 librariesRouter.get(
   "/:libraryId/recommendations",
@@ -120,7 +124,7 @@ librariesRouter.get(
 librariesRouter.get("/:libraryId/books", getLibraryBooksController);
 
 /*
- * Одна effective book.
+ * РћРґРЅР° effective book.
  *
  * LibraryBook overrides
  * + UserBook
@@ -128,7 +132,7 @@ librariesRouter.get("/:libraryId/books", getLibraryBooksController);
 librariesRouter.get("/:libraryId/books/:bookId", getLibraryBookController);
 
 /*
- * Додавання книги.
+ * Р”РѕРґР°РІР°РЅРЅСЏ РєРЅРёРіРё.
  */
 librariesRouter.post(
   "/:libraryId/books",
@@ -157,6 +161,17 @@ librariesRouter.post(
   uploadCover.single("cover"),
   updateLibraryBookCoverController,
 );
+
+librariesRouter.get("/:libraryId/books/:bookId/files", getBookFilesController);
+
+librariesRouter.post(
+  "/:libraryId/books/:bookId/files",
+  canUploadBookFile,
+  handleEbookUpload,
+  addBookFileController,
+);
+
+librariesRouter.get("/:libraryId/books/:bookId/files/:fileId/download", downloadBookFileController);
 
 export default librariesRouter;
 
