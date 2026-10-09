@@ -22,8 +22,10 @@ import { getCurrentUserBookController } from "../controllers/getCurrentUserBookC
 import { getFinishedUserBooksController } from "../controllers/getFinishedUserBooksController.js";
 
 import { getWishlistController } from "../controllers/getWishlistController.js";
-import { addToWishlistController } from "../controllers/addToWishlistController.js";
-import { removeFromWishlistController } from "../controllers/removeFromWishlistController.js";
+import {
+  addToWishlistController,
+  removeFromWishlistController,
+} from "../controllers/wishlistController.js";
 
 import { getUserStatsController } from "../../stats/controllers/getUserStatsController.js";
 import { getUserActivityController } from "../../stats/controllers/getUserActivityController.js";
