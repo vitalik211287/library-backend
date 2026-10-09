@@ -575,6 +575,22 @@ export const updateLibraryBookCoverController = async (
    LIBRARY GOAL
 ========================= */
 
+const parseLibraryGoalYear = (
+  value: unknown,
+): number | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const year = Number(value);
+
+  if (!Number.isInteger(year)) {
+    throw new Error("Invalid year");
+  }
+
+  return year;
+};
+
 export const getLibraryGoalController = async (
   req: Request,
   res: Response,
@@ -595,19 +611,7 @@ export const getLibraryGoalController = async (
       });
     }
 
-    let year: number | undefined;
-
-    if (req.query.year !== undefined) {
-      const parsedYear = Number(req.query.year);
-
-      if (!Number.isInteger(parsedYear)) {
-        return res.status(400).json({
-          message: "Invalid year",
-        });
-      }
-
-      year = parsedYear;
-    }
+    const year = parseLibraryGoalYear(req.query.year);
 
     const goal = await getLibraryGoalService(
       userId,
@@ -642,19 +646,7 @@ export const updateLibraryGoalController = async (
       });
     }
 
-    let year: number | undefined;
-
-    if (req.query.year !== undefined) {
-      const parsedYear = Number(req.query.year);
-
-      if (!Number.isInteger(parsedYear)) {
-        return res.status(400).json({
-          message: "Invalid year",
-        });
-      }
-
-      year = parsedYear;
-    }
+    const year = parseLibraryGoalYear(req.query.year);
 
     if (!Number.isInteger(booksGoal) || booksGoal <= 0) {
       return res.status(400).json({
