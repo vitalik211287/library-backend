@@ -14,6 +14,7 @@ type FinishReadingData = {
   endPercent?: number;
   epubStartPositionPercent?: number;
   epubEndPositionPercent?: number;
+  epubReachedEnd?: boolean;
 };
 
 export const finishUserReadingService = async (
@@ -94,6 +95,15 @@ export const finishUserReadingService = async (
     }
   }
 
+  if (
+    data.epubReachedEnd !== undefined &&
+    (typeof data.epubReachedEnd !== "boolean" ||
+      session.source !== "EBOOK" ||
+      progressMode !== "PERCENT")
+  ) {
+    throw new Error("Invalid EPUB completion flag");
+  }
+
   /* =========================
      SESSION TIME
   ========================= */
@@ -140,9 +150,11 @@ export const finishUserReadingService = async (
   ========================= */
 
   const isFinished =
-    progressMode === "PAGES"
-      ? book.pages !== null && endPage !== undefined && endPage >= book.pages
-      : endPercent === 100;
+    session.source === "EBOOK"
+      ? data.epubReachedEnd === true
+      : progressMode === "PAGES"
+        ? book.pages !== null && endPage !== undefined && endPage >= book.pages
+        : endPercent === 100;
 
   const status = isFinished ? "FINISHED" : "READING";
 

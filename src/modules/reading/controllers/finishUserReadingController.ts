@@ -10,7 +10,7 @@ export const finishUserReadingController = async (
     const userId = req.userId;
     const { bookId } = req.params;
 
-    const { endPage, endPercent, epubStartPositionPercent, epubEndPositionPercent } = req.body;
+    const { endPage, endPercent, epubStartPositionPercent, epubEndPositionPercent, epubReachedEnd } = req.body;
 
     if (!userId) {
       return res.status(401).json({
@@ -39,6 +39,9 @@ export const finishUserReadingController = async (
 
       ...(epubEndPositionPercent !== undefined && {
         epubEndPositionPercent: Number(epubEndPositionPercent),
+      }),
+      ...(epubReachedEnd !== undefined && {
+        epubReachedEnd,
       }),
     });
 
