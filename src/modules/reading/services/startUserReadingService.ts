@@ -11,6 +11,7 @@ import {
 
 type StartReadingData = {
   progressMode?: ProgressMode;
+  source?: "MANUAL" | "EBOOK";
   startPage?: number;
   startPercent?: number;
 };
@@ -69,6 +70,7 @@ export const startUserReadingService = async (
 
   const session = await createUserReadingSession(userId, bookId, {
     progressMode,
+    source: data.source ?? "MANUAL",
     startPage,
     startPercent,
   });

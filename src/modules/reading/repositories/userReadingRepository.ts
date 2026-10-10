@@ -25,6 +25,7 @@ export const getActiveUserReadingSession = async (
 
 type CreateReadingSessionData = {
   progressMode: ProgressMode;
+  source: "MANUAL" | "EBOOK";
   startPage?: number;
   startPercent?: number;
 };
@@ -40,6 +41,7 @@ export const createUserReadingSession = async (
       bookId,
 
       progressMode: data.progressMode,
+      source: data.source,
 
       startPage: data.progressMode === "PAGES" ? (data.startPage ?? 0) : 0,
 
@@ -91,6 +93,8 @@ type FinishReadingSessionData = {
   progressMode: ProgressMode;
   endPage?: number;
   endPercent?: number;
+  epubStartPositionPercent?: number;
+  epubEndPositionPercent?: number;
   durationSeconds: number;
   pausedSeconds: number;
 };
@@ -111,6 +115,13 @@ export const finishUserReadingSession = async (
 
       endPercent:
         data.progressMode === "PERCENT" ? (data.endPercent ?? null) : null,
+
+      ...(data.epubStartPositionPercent !== undefined && {
+        epubStartPositionPercent: data.epubStartPositionPercent,
+      }),
+      ...(data.epubEndPositionPercent !== undefined && {
+        epubEndPositionPercent: data.epubEndPositionPercent,
+      }),
 
       durationSeconds: data.durationSeconds,
 

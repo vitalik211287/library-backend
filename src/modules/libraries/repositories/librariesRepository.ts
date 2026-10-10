@@ -218,6 +218,14 @@ export const getLibraryBooks = async (libraryId: string, userId: string) => {
       libraryId,
     },
     include: {
+      files: {
+        select: {
+          id: true,
+          format: true,
+          fileName: true,
+        },
+        orderBy: { createdAt: "desc" },
+      },
       book: {
         include: {
           users: {

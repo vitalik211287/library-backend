@@ -18,6 +18,11 @@ enum ProgressMode {
   PERCENT
 }
 
+enum ReadingSessionSource {
+  MANUAL
+  EBOOK
+}
+
 enum UserRole {
   USER
   ADMIN
@@ -187,6 +192,7 @@ model ReadingSession {
   book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
   progressMode ProgressMode @default(PAGES)
+  source ReadingSessionSource?
 
   startedAt  DateTime
   finishedAt DateTime?
@@ -196,6 +202,10 @@ model ReadingSession {
 
   startPercent Int?
   endPercent   Int?
+
+  // EPUB navigation positions, separate from reading-progress accounting.
+  epubStartPositionPercent Int?
+  epubEndPositionPercent   Int?
 
   durationSeconds Int?
 

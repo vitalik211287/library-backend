@@ -275,11 +275,18 @@ export const getLibraryBooksService = async (
   return libraryBooks.map((libraryBook) => {
     const { users, ...book } = libraryBook.book;
 
-    return buildEffectiveBook({
-      book,
-      libraryBook,
-      userBook: users[0] ?? null,
-    });
+    return {
+      ...buildEffectiveBook({
+        book,
+        libraryBook,
+        userBook: users[0] ?? null,
+      }),
+      ebookFiles: libraryBook.files.map(({ id, format, fileName }) => ({
+        id,
+        format,
+        fileName,
+      })),
+    };
   });
 };
 

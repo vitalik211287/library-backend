@@ -12,7 +12,7 @@ export const startUserReadingController = async (
     const userId = req.userId;
     const { bookId } = req.params;
 
-    const { progressMode, startPage, startPercent } = req.body;
+    const { progressMode, startPage, startPercent, source } = req.body;
 
     if (!userId) {
       return res.status(401).json({
@@ -32,6 +32,7 @@ export const startUserReadingController = async (
         : undefined;
 
     const session = await startUserReadingService(userId, bookId, {
+      ...(source === "EBOOK" && { source: "EBOOK" as const }),
       ...(normalizedProgressMode !== undefined && {
         progressMode: normalizedProgressMode,
       }),

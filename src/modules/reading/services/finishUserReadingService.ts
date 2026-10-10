@@ -12,6 +12,8 @@ import { calculateReadingSessionTime } from "../utils/readingSessionTime.js";
 type FinishReadingData = {
   endPage?: number;
   endPercent?: number;
+  epubStartPositionPercent?: number;
+  epubEndPositionPercent?: number;
 };
 
 export const finishUserReadingService = async (
@@ -78,6 +80,20 @@ export const finishUserReadingService = async (
     }
   }
 
+  // EPUB positions may move backwards when the reader seeks or rereads.
+  // Do not confuse them with the cumulative progress percentage.
+  const epubPositions = [data.epubStartPositionPercent, data.epubEndPositionPercent];
+  if (epubPositions.some((value) => value !== undefined)) {
+    if (session.source !== "EBOOK" || progressMode !== "PERCENT") {
+      throw new Error("EPUB positions are only allowed for EPUB sessions");
+    }
+    if (epubPositions.some((value) =>
+      value !== undefined && (!Number.isInteger(value) || value < 0 || value > 100)
+    )) {
+      throw new Error("EPUB positions must be integer percentages between 0 and 100");
+    }
+  }
+
   /* =========================
      SESSION TIME
   ========================= */
@@ -106,6 +122,13 @@ export const finishUserReadingService = async (
       endPercent !== undefined && {
         endPercent,
       }),
+
+    ...(session.source === "EBOOK" && data.epubStartPositionPercent !== undefined && {
+      epubStartPositionPercent: data.epubStartPositionPercent,
+    }),
+    ...(session.source === "EBOOK" && data.epubEndPositionPercent !== undefined && {
+      epubEndPositionPercent: data.epubEndPositionPercent,
+    }),
 
     durationSeconds,
 
