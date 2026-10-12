@@ -26,12 +26,31 @@ type UpdateUserBookData = {
   isWishlist?: boolean;
 };
 
+export type PostCommitEffect = () => Promise<unknown>;
+
 export const updateUserBookService = async (
   userId: string,
   bookId: string,
   data: UpdateUserBookData,
   db: DbClient = prisma,
+  postCommitEffects?: PostCommitEffect[],
 ) => {
+  const notifyActivity = async (activityId: string) => {
+    const effect: PostCommitEffect = () =>
+      createSocialActivityNotificationsService({
+        actorUserId: userId,
+        activityId,
+        bookId,
+      });
+
+    if (postCommitEffects) {
+      postCommitEffects.push(effect);
+      return;
+    }
+
+    await effect();
+  };
+
   const userBook = await getUserBook(userId, bookId, db);
 
   if (
@@ -183,11 +202,7 @@ export const updateUserBookService = async (
       db,
     );
 
-    await createSocialActivityNotificationsService({
-      actorUserId: userId,
-      activityId: activity.id,
-      bookId,
-    });
+    await notifyActivity(activity.id);
   }
 
   if (
@@ -200,11 +215,7 @@ export const updateUserBookService = async (
       db,
     );
 
-    await createSocialActivityNotificationsService({
-      actorUserId: userId,
-      activityId: activity.id,
-      bookId,
-    });
+    await notifyActivity(activity.id);
   }
 
   if (
@@ -221,11 +232,7 @@ export const updateUserBookService = async (
         db,
       );
 
-      await createSocialActivityNotificationsService({
-        actorUserId: userId,
-        activityId: activity.id,
-        bookId,
-      });
+      await notifyActivity(activity.id);
     }
   }
   return updatedUserBook;

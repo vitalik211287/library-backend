@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -212,7 +213,13 @@ model ReadingSession {
   pausedAt      DateTime?
   pausedSeconds Int       @default(0)
 
+  // Null for legacy/manual sessions.
+  lastHeartbeatAt DateTime?
+  verifiedSeconds Int?
+  readerLeaseId    String?
+
   createdAt DateTime @default(now())
+  @@unique([userId, bookId], map: "ReadingSession_one_active_user_book", where: { finishedAt: null })
 }
 
 model ReadingGoal {

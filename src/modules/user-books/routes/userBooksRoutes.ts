@@ -6,6 +6,8 @@ import { getUserBookController } from "../controllers/getUserBookController.js";
 import { updateUserBookController } from "../controllers/updateUserBookController.js";
 
 import { startUserReadingController } from "../../reading/controllers/startUserReadingController.js";
+import { claimUserEbookSessionController } from "../../reading/controllers/claimUserEbookSessionController.js";
+import { heartbeatUserReadingController } from "../../reading/controllers/heartbeatUserReadingController.js";
 import { finishUserReadingController } from "../../reading/controllers/finishUserReadingController.js";
 import { getActiveUserReadingSessionController } from "../../reading/controllers/getActiveUserReadingSessionController.js";
 import { getUserReadingStatsController } from "../../reading/controllers/getUserReadingStatsController.js";
@@ -86,6 +88,16 @@ userBooksRouter.delete("/:bookId/wishlist", removeFromWishlistController);
 userBooksRouter.post("/:bookId/reading/start", startUserReadingController);
 
 userBooksRouter.post("/:bookId/reading/finish", finishUserReadingController);
+
+userBooksRouter.post(
+  "/:bookId/reading/claim",
+  claimUserEbookSessionController,
+);
+
+userBooksRouter.post(
+  "/:bookId/reading/heartbeat",
+  heartbeatUserReadingController,
+);
 
 userBooksRouter.post("/:bookId/reading/import", importUserReadingController);
 

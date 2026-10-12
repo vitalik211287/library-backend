@@ -28,7 +28,12 @@ const createReadingController = (action: ReadingAction) => {
         });
       }
 
-      const session = await service(userId, bookId);
+      const readerLeaseId =
+        typeof req.body?.readerLeaseId === "string"
+          ? req.body.readerLeaseId
+          : undefined;
+
+      const session = await service(userId, bookId, readerLeaseId);
 
       return res.status(200).json({ session });
     } catch (error) {

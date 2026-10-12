@@ -1,6 +1,7 @@
 import { getBookById } from "../../books/repositories/booksRepository.js";
 
 import { getActiveUserReadingSession } from "../repositories/userReadingRepository.js";
+import { calculateVerifiedEbookSeconds } from "../utils/ebookHeartbeatTime.js";
 
 export const getActiveUserReadingSessionService = async (
   userId: string,
@@ -39,10 +40,24 @@ export const getActiveUserReadingSessionService = async (
     totalPausedSeconds += currentPauseSeconds;
   }
 
-  const elapsedSeconds = Math.max(totalElapsedSeconds - totalPausedSeconds, 0);
+  const legacyElapsedSeconds = Math.max(
+    totalElapsedSeconds - totalPausedSeconds,
+    0,
+  );
+
+  const verifiedTime = session.source === "EBOOK"
+    ? calculateVerifiedEbookSeconds({
+        verifiedSeconds: session.verifiedSeconds,
+        lastHeartbeatAt: session.lastHeartbeatAt,
+        pausedAt: session.pausedAt,
+        now: new Date(now),
+      })
+    : null;
+
+  const elapsedSeconds = verifiedTime ?? legacyElapsedSeconds;
 
   return {
-    session,
+    session: { ...session, readerLeaseId: undefined },
     elapsedSeconds,
   };
 };

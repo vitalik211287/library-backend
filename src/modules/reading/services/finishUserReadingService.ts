@@ -1,6 +1,8 @@
+import prisma from "../../../utils/prisma.js";
 import { getBookById } from "../../books/repositories/booksRepository.js";
 
 import { updateUserBookService } from "../../user-books/services/updateUserBookService.js";
+import type { PostCommitEffect } from "../../user-books/services/updateUserBookService.js";
 
 import {
   finishUserReadingSession,
@@ -8,6 +10,7 @@ import {
 } from "../repositories/userReadingRepository.js";
 
 import { calculateReadingSessionTime } from "../utils/readingSessionTime.js";
+import { calculateVerifiedEbookSeconds } from "../utils/ebookHeartbeatTime.js";
 
 type FinishReadingData = {
   endPage?: number;
@@ -15,6 +18,7 @@ type FinishReadingData = {
   epubStartPositionPercent?: number;
   epubEndPositionPercent?: number;
   epubReachedEnd?: boolean;
+  readerLeaseId?: string;
 };
 
 export const finishUserReadingService = async (
@@ -32,6 +36,14 @@ export const finishUserReadingService = async (
 
   if (!session) {
     throw new Error("No active reading session");
+  }
+
+  if (
+    session.source === "EBOOK" &&
+    session.readerLeaseId !== null &&
+    session.readerLeaseId !== data.readerLeaseId
+  ) {
+    throw new Error("EPUB reader ownership has changed");
   }
 
   const progressMode = session.progressMode;
@@ -108,75 +120,118 @@ export const finishUserReadingService = async (
      SESSION TIME
   ========================= */
 
-  const { durationSeconds, pausedSeconds: totalPausedSeconds } =
-    calculateReadingSessionTime(
-      session.startedAt,
-      session.pausedAt,
-      session.pausedSeconds,
-      new Date(),
-    );
+  const now = new Date();
+
+  const legacyTime = calculateReadingSessionTime(
+    session.startedAt,
+    session.pausedAt,
+    session.pausedSeconds,
+    now,
+  );
+
+  const verifiedTime = session.source === "EBOOK"
+    ? calculateVerifiedEbookSeconds({
+        verifiedSeconds: session.verifiedSeconds,
+        lastHeartbeatAt: session.lastHeartbeatAt,
+        pausedAt: session.pausedAt,
+        now,
+      })
+    : null;
+
+  const durationSeconds = verifiedTime ?? legacyTime.durationSeconds;
+  const totalPausedSeconds = legacyTime.pausedSeconds;
 
   /* =========================
      FINISH SESSION
   ========================= */
 
-  const finishedSession = await finishUserReadingSession(session.id, {
-    progressMode,
+  const postCommitEffects: PostCommitEffect[] = [];
 
-    ...(progressMode === "PAGES" &&
-      endPage !== undefined && {
-        endPage,
+  const finishedSession = await prisma.$transaction(async (tx) => {
+    const savedSession = await finishUserReadingSession(session.id, {
+      progressMode,
+
+      ...(progressMode === "PAGES" &&
+        endPage !== undefined && {
+          endPage,
+        }),
+
+      ...(progressMode === "PERCENT" &&
+        endPercent !== undefined && {
+          endPercent,
+        }),
+
+      ...(session.source === "EBOOK" && data.epubStartPositionPercent !== undefined && {
+        epubStartPositionPercent: data.epubStartPositionPercent,
+      }),
+      ...(session.source === "EBOOK" && data.epubEndPositionPercent !== undefined && {
+        epubEndPositionPercent: data.epubEndPositionPercent,
       }),
 
-    ...(progressMode === "PERCENT" &&
-      endPercent !== undefined && {
-        endPercent,
+      durationSeconds,
+
+      pausedSeconds: totalPausedSeconds,
+
+      ...(session.source === "EBOOK" && {
+        expectedReaderLeaseId: session.readerLeaseId,
       }),
 
-    ...(session.source === "EBOOK" && data.epubStartPositionPercent !== undefined && {
-      epubStartPositionPercent: data.epubStartPositionPercent,
-    }),
-    ...(session.source === "EBOOK" && data.epubEndPositionPercent !== undefined && {
-      epubEndPositionPercent: data.epubEndPositionPercent,
-    }),
+      ...(verifiedTime !== null &&
+        session.source === "EBOOK" &&
+        session.lastHeartbeatAt !== null &&
+        session.verifiedSeconds !== null && {
+          expectedEbookHeartbeat: {
+            lastHeartbeatAt: session.lastHeartbeatAt,
+            verifiedSeconds: session.verifiedSeconds,
+            pausedAt: session.pausedAt,
+          },
+        }),
+    }, tx);
 
-    durationSeconds,
+    /* =========================
+       BOOK STATUS
+    ========================= */
 
-    pausedSeconds: totalPausedSeconds,
+    const isFinished =
+      session.source === "EBOOK"
+        ? data.epubReachedEnd === true
+        : progressMode === "PAGES"
+          ? book.pages !== null && endPage !== undefined && endPage >= book.pages
+          : endPercent === 100;
+
+    const status = isFinished ? "FINISHED" : "READING";
+
+    /* =========================
+       UPDATE USER BOOK
+    ========================= */
+
+    await updateUserBookService(userId, bookId, {
+      progressMode,
+
+      ...(progressMode === "PAGES" &&
+        endPage !== undefined && {
+          currentPage: endPage,
+        }),
+
+      ...(progressMode === "PERCENT" &&
+        endPercent !== undefined && {
+          currentPercent: endPercent,
+        }),
+
+      status,
+    }, tx, postCommitEffects);
+
+    return savedSession;
   });
 
-  /* =========================
-     BOOK STATUS
-  ========================= */
-
-  const isFinished =
-    session.source === "EBOOK"
-      ? data.epubReachedEnd === true
-      : progressMode === "PAGES"
-        ? book.pages !== null && endPage !== undefined && endPage >= book.pages
-        : endPercent === 100;
-
-  const status = isFinished ? "FINISHED" : "READING";
-
-  /* =========================
-     UPDATE USER BOOK
-  ========================= */
-
-  await updateUserBookService(userId, bookId, {
-    progressMode,
-
-    ...(progressMode === "PAGES" &&
-      endPage !== undefined && {
-        currentPage: endPage,
-      }),
-
-    ...(progressMode === "PERCENT" &&
-      endPercent !== undefined && {
-        currentPercent: endPercent,
-      }),
-
-    status,
-  });
+  // Notifications run only after the transaction has committed.
+  for (const effect of postCommitEffects) {
+    try {
+      await effect();
+    } catch (error) {
+      console.warn("Reading notifications failed after commit", error);
+    }
+  }
 
   return finishedSession;
 };
