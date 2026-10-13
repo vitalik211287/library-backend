@@ -16,6 +16,7 @@ import {
   resumeUserReadingController,
 } from "../../reading/controllers/pauseResumeReadingController.js";
 import { importUserReadingController } from "../../reading/controllers/importUserReadingController.js";
+import { syncOfflineManualSessionController } from "../../reading/controllers/syncOfflineManualSessionController.js";
 
 import { getUserReadingSessionsController } from "../../reading/controllers/getUserReadingSessionsController.js";
 import { getAllUserReadingSessionsController } from "../../reading/controllers/getAllUserReadingSessionsController.js";
@@ -100,6 +101,7 @@ userBooksRouter.post(
 );
 
 userBooksRouter.post("/:bookId/reading/import", importUserReadingController);
+userBooksRouter.post("/:bookId/reading/offline-sync", syncOfflineManualSessionController);
 
 userBooksRouter.get(
   "/:bookId/reading/active",
