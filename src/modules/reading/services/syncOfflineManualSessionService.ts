@@ -159,8 +159,37 @@ export const syncOfflineManualSessionService = async (
       },
     });
 
-    // Progress is intentionally not modified in this first step: another
-    // device may already have advanced the book while this one was offline.
-    return { session, alreadySynced: false, progressApplied: false };
+    // The row is locked above, so another offline import cannot race this
+    // check. Never overwrite newer progress or switch a percent-based book.
+    const userBook = await tx.userBook.findUniqueOrThrow({
+      where: { userId_bookId: { userId, bookId } },
+      select: { currentPage: true, progressMode: true },
+    });
+    const progressApplied =
+      userBook.progressMode === "PAGES" &&
+      input.endPage > userBook.currentPage;
+
+    if (progressApplied) {
+      await tx.userBook.update({
+        where: { userId_bookId: { userId, bookId } },
+        data: { currentPage: input.endPage },
+      });
+      await tx.activityLog.create({
+        data: {
+          userId,
+          bookId,
+          type: "PROGRESS_CHANGED",
+          oldValue: String(userBook.currentPage),
+          newValue: String(input.endPage),
+        },
+      });
+    }
+
+    return {
+      session,
+      alreadySynced: false,
+      progressApplied,
+      currentPage: progressApplied ? input.endPage : userBook.currentPage,
+    };
   });
 };
