@@ -1,4 +1,5 @@
 import prisma from "../../../utils/prisma.js";
+import { validateReadingSessionEdit } from "../utils/validateReadingSessionEdit.js";
 
 import { getBookById } from "../../books/repositories/booksRepository.js";
 
@@ -17,6 +18,8 @@ import {
 type UpdateReadingSessionData = {
   endPage?: number;
   endPercent?: number;
+  startedAt?: string;
+  durationSeconds?: number;
 };
 
 export const getAllUserReadingSessionsService = async (userId: string) => {
@@ -56,6 +59,26 @@ export const updateUserReadingSessionService = async (
     throw new Error("Reading session not found");
   }
 
+  const isTimeEdit =
+    data.startedAt !== undefined ||
+    data.durationSeconds !== undefined;
+
+  if (isTimeEdit) {
+    if (
+      session.source !== "MANUAL" ||
+      session.pausedSeconds !== 0 ||
+      session.finishedAt === null
+    ) {
+      throw new Error("Time editing is not supported for this session");
+    }
+  }
+  const editedTime = isTimeEdit
+    ? validateReadingSessionEdit(
+        session.startedAt,
+        session.durationSeconds,
+        data,
+      )
+    : null;
   const userBook = await getUserBook(userId, bookId);
 
   if (!userBook) {
@@ -82,50 +105,55 @@ export const updateUserReadingSessionService = async (
     | { progressMode: "PERCENT"; currentPercent: number };
 
   if (session.progressMode === "PAGES") {
-    if (data.endPage === undefined) {
+    const endPage = data.endPage ?? (isTimeEdit ? session.endPage : undefined);
+
+    if (endPage === undefined || endPage === null) {
       throw new Error("End page is required");
     }
 
-    if (!Number.isInteger(data.endPage)) {
+    if (!Number.isInteger(endPage)) {
       throw new Error("End page must be an integer");
     }
 
-    if (data.endPage < session.startPage) {
+    if (endPage < session.startPage) {
       throw new Error("End page cannot be less than start page");
     }
 
-    if (book.pages !== null && data.endPage > book.pages) {
+    if (book.pages !== null && endPage > book.pages) {
       throw new Error("End page cannot be greater than total book pages");
     }
 
-    sessionProgress = { endPage: data.endPage };
+    sessionProgress = { endPage };
     bookProgress = {
       progressMode: "PAGES",
-      currentPage: data.endPage,
+      currentPage: endPage,
     };
   } else {
-    if (data.endPercent === undefined) {
+    const endPercent =
+      data.endPercent ?? (isTimeEdit ? session.endPercent : undefined);
+
+    if (endPercent === undefined || endPercent === null) {
       throw new Error("End percent is required");
     }
 
-    if (!Number.isFinite(data.endPercent)) {
+    if (!Number.isFinite(endPercent)) {
       throw new Error("End percent must be a number");
     }
 
-    if (data.endPercent < 0 || data.endPercent > 100) {
+    if (endPercent < 0 || endPercent > 100) {
       throw new Error("End percent must be between 0 and 100");
     }
 
     const startPercent = session.startPercent ?? 0;
 
-    if (data.endPercent < startPercent) {
+    if (endPercent < startPercent) {
       throw new Error("End percent cannot be less than start percent");
     }
 
-    sessionProgress = { endPercent: data.endPercent };
+    sessionProgress = { endPercent };
     bookProgress = {
       progressMode: "PERCENT",
-      currentPercent: data.endPercent,
+      currentPercent: endPercent,
     };
   }
 
@@ -139,13 +167,49 @@ export const updateUserReadingSessionService = async (
         userBook.currentPercent === previousEndPercent;
 
   return prisma.$transaction(async (tx) => {
+    if (editedTime) {
+      const overlappingSession = await tx.readingSession.findFirst({
+        where: {
+          userId,
+          bookId,
+          id: { not: sessionId },
+          startedAt: { lt: editedTime.finishedAt },
+          OR: [
+            { finishedAt: null },
+            { finishedAt: { gt: editedTime.startedAt } },
+          ],
+        },
+        select: { id: true },
+      });
+
+      if (overlappingSession) {
+        throw new Error("Reading session overlaps another session");
+      }
+    }
+
     const updatedSession = await updateUserReadingSessionProgress(
       session.id,
-      sessionProgress,
+      {
+        ...sessionProgress,
+        ...(editedTime ?? {}),
+      },
       tx,
     );
 
-    if (isLatestSession && userBookPointsToSession) {
+    const latestSessionAfterEdit = editedTime
+      ? await getLatestFinishedUserReadingSession(userId, bookId, tx)
+      : null;
+
+    const isLatestAfterEdit = editedTime
+      ? latestSessionAfterEdit?.id === session.id
+      : isLatestSession;
+
+    if (
+      (data.endPage !== undefined || data.endPercent !== undefined) &&
+      isLatestSession &&
+      isLatestAfterEdit &&
+      userBookPointsToSession
+    ) {
       await updateUserBookService(
         userId,
         bookId,

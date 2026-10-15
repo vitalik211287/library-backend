@@ -35,14 +35,18 @@ export const updateUserReadingSessionController = async (
       return;
     }
 
-    const { endPage, endPercent } = req.body as {
+    const { endPage, endPercent, startedAt, durationSeconds } = req.body as {
       endPage?: unknown;
       endPercent?: unknown;
+      startedAt?: unknown;
+      durationSeconds?: unknown;
     };
 
     const data: {
       endPage?: number;
       endPercent?: number;
+      startedAt?: string;
+      durationSeconds?: number;
     } = {};
 
     if (endPage !== undefined) {
@@ -69,7 +73,31 @@ export const updateUserReadingSessionController = async (
       data.endPercent = endPercent;
     }
 
-    if (data.endPage === undefined && data.endPercent === undefined) {
+    if (startedAt !== undefined) {
+      if (typeof startedAt !== "string") {
+        res.status(400).json({
+          message: "Started at must be a string",
+        });
+        return;
+      }
+      data.startedAt = startedAt;
+    }
+
+    if (durationSeconds !== undefined) {
+      if (typeof durationSeconds !== "number") {
+        res.status(400).json({
+          message: "Duration must be a number",
+        });
+        return;
+      }
+      data.durationSeconds = durationSeconds;
+    }
+    if (
+      data.endPage === undefined &&
+      data.endPercent === undefined &&
+      data.startedAt === undefined &&
+      data.durationSeconds === undefined
+    ) {
       res.status(400).json({
         message: "End page or end percent is required",
       });
@@ -103,7 +131,17 @@ export const updateUserReadingSessionController = async (
         return;
       }
 
+      if (error.message === "Reading session overlaps another session") {
+        res.status(409).json({ message: error.message });
+        return;
+      }
       const validationErrors = [
+        "Started at must be a string",
+        "Duration must be a number",
+        "Invalid session date",
+        "Invalid session duration",
+        "Session cannot finish in the future",
+        "Time editing is not supported for this session",
         "End page is required",
         "End page must be an integer",
         "End page cannot be less than start page",

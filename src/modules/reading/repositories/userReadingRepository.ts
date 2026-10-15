@@ -530,6 +530,9 @@ export const getUserReadingSessionById = async (
 type UpdateReadingSessionProgressData = {
   endPage?: number;
   endPercent?: number;
+  startedAt?: Date;
+  finishedAt?: Date;
+  durationSeconds?: number;
 };
 
 export const updateUserReadingSessionProgress = async (
@@ -549,6 +552,18 @@ export const updateUserReadingSessionProgress = async (
 
       ...(data.endPercent !== undefined && {
         endPercent: data.endPercent,
+      }),
+
+      ...(data.startedAt !== undefined && {
+        startedAt: data.startedAt,
+      }),
+
+      ...(data.finishedAt !== undefined && {
+        finishedAt: data.finishedAt,
+      }),
+
+      ...(data.durationSeconds !== undefined && {
+        durationSeconds: data.durationSeconds,
       }),
     },
   });
